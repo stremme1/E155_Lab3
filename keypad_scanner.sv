@@ -134,7 +134,7 @@ module keypad_scanner (
         key_detected = 1'b0;
         detected_key = 4'b0000;
         
-        // Check for any row being pressed (any row goes LOW)
+        // Check for any row being pressed (any row goes LOW when pressed)
         if (!keypad_rows_sync[0] || !keypad_rows_sync[1] || !keypad_rows_sync[2] || !keypad_rows_sync[3]) begin
             key_detected = 1'b1;
             
