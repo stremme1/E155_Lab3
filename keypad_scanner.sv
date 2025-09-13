@@ -160,30 +160,31 @@ module keypad_scanner (
             // R2    7   8   9   E
             // R3    A   0   B   F
             case (current_col)
-                2'b00: begin  // Column 0
+                4'b0000: begin  // Column 0
                     if (!keypad_rows_sync[0]) detected_key = 4'b0001;      // Key 1
                     else if (!keypad_rows_sync[1]) detected_key = 4'b0100; // Key 4
                     else if (!keypad_rows_sync[2]) detected_key = 4'b0111; // Key 7
                     else if (!keypad_rows_sync[3]) detected_key = 4'b1010; // Key A
                 end
-                2'b01: begin  // Column 1
+                4'b0001: begin  // Column 1
                     if (!keypad_rows_sync[0]) detected_key = 4'b0010;      // Key 2
                     else if (!keypad_rows_sync[1]) detected_key = 4'b0101; // Key 5
                     else if (!keypad_rows_sync[2]) detected_key = 4'b1000; // Key 8
                     else if (!keypad_rows_sync[3]) detected_key = 4'b0000; // Key 0
                 end
-                2'b10: begin  // Column 2
+                4'b0010: begin  // Column 2
                     if (!keypad_rows_sync[0]) detected_key = 4'b0011;      // Key 3
                     else if (!keypad_rows_sync[1]) detected_key = 4'b0110; // Key 6
                     else if (!keypad_rows_sync[2]) detected_key = 4'b1001; // Key 9
                     else if (!keypad_rows_sync[3]) detected_key = 4'b1011; // Key B
                 end
-                2'b11: begin  // Column 3
+                4'b0011: begin  // Column 3
                     if (!keypad_rows_sync[0]) detected_key = 4'b1100;      // Key C
                     else if (!keypad_rows_sync[1]) detected_key = 4'b1101; // Key D
                     else if (!keypad_rows_sync[2]) detected_key = 4'b1110; // Key E
                     else if (!keypad_rows_sync[3]) detected_key = 4'b1111; // Key F
                 end
+                default: detected_key = 4'b0000;  // Default case
             endcase
         end
     end
