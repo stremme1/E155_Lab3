@@ -4,8 +4,8 @@
 
 module lab3_top (
     input  logic        reset,         // Active-low reset signal
-    input  logic [3:0]  keypad_rows,   // Keypad row inputs (FPGA reads)
-    output logic [3:0]  keypad_cols,   // Keypad column outputs (FPGA drives)
+    output logic [3:0]  keypad_rows,   // Keypad row outputs (FPGA drives)
+    input  logic [3:0]  keypad_cols,   // Keypad column inputs (FPGA reads)
     output logic [6:0]  seg,           // Seven-segment display signals
     output logic        select0,       // Display 0 power control
     output logic        select1        // Display 1 power control
