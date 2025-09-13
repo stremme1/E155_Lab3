@@ -3,7 +3,6 @@
 // Lab3 Top Module - Keypad Scanner with Display System
 
 module lab3_top (
-    input  logic        clk,           // External clock input (12 MHz)
     input  logic        reset,         // Active-low reset signal
     input  logic [3:0]  keypad_rows,   // Keypad row inputs
     output logic [3:0]  keypad_cols,   // Keypad column outputs
@@ -13,10 +12,15 @@ module lab3_top (
 );
 
     // Internal signals
+    logic        clk;                  // Internal clock from HSOSC
     logic [3:0]  key_code;             // Key code from scanner
     logic        key_valid;            // Valid key press signal
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
+
+    // Internal high-speed oscillator
+    HSOSC #(.CLKHF_DIV(2'b01)) 
+          hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
 
     // Keypad scanner
     keypad_scanner scanner_inst (

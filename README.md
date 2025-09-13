@@ -23,8 +23,13 @@
 2. **Connect keypad according to `KEYPAD_WIRING.md`**
 3. **All modules are SystemVerilog compliant and verified**
 4. **Clean pin assignments - no internal signals exposed**
-5. **Uses existing MUX2 for display control**
+5. **Uses internal HSOSC - no external clock needed**
 6. **Keypad input directly controls display system**
+
+### **Pin Count:**
+- **Inputs (5 total):** reset, keypad_rows[3:0]
+- **Outputs (13 total):** keypad_cols[3:0], seg[6:0], select0, select1
+- **Total: 18 pins** (reduced from 19 by using internal oscillator)
 
 ## ✅ **Lab Requirements Met:**
 - Single seven_segment instance
