@@ -27,9 +27,24 @@
 6. **Keypad input directly controls display system**
 
 ### **Pin Count:**
-- **Inputs (5 total):** reset, keypad_rows[3:0]
-- **Outputs (13 total):** keypad_cols[3:0], seg[6:0], select0, select1
+- **Inputs (5 total):** reset, keypad_cols[3:0]
+- **Outputs (13 total):** keypad_rows[3:0], seg[6:0], select0, select1
 - **Total: 18 pins** (reduced from 19 by using internal oscillator)
+
+### **Correct Wiring for Your Keypad:**
+```
+Your Keypad Layout:
+     C0  C1  C2  C3
+R0    1   2   3   C
+R1    4   5   6   D  
+R2    7   8   9   E
+R3    A   0   B   F
+
+Wiring:
+- Rows (R0-R3): FPGA drives LOW, direct connection
+- Columns (C0-C3): FPGA reads, pulled HIGH with 10kΩ resistors
+- 3.3V → 10kΩ resistor → Column pin → FPGA input
+```
 
 ## ✅ **Lab Requirements Met:**
 - Single seven_segment instance
