@@ -4,8 +4,8 @@
 
 module lab3_top (
     input  logic        reset,         // Active-low reset signal
-    output logic [3:0]  keypad_rows,   // Keypad row outputs (FPGA drives)
-    input  logic [3:0]  keypad_cols,   // Keypad column inputs (FPGA reads)
+    input  logic [3:0]  keypad_rows,   // Keypad row inputs (FPGA reads)
+    output logic [3:0]  keypad_cols,   // Keypad column outputs (FPGA drives)
     output logic [6:0]  seg,           // Seven-segment display signals
     output logic        select0,       // Display 0 power control
     output logic        select1        // Display 1 power control
@@ -18,8 +18,8 @@ module lab3_top (
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
 
-    // Internal high-speed oscillator
-    HSOSC #(.CLKHF_DIV(2'b01)) 
+    // Internal high-speed oscillator with slower division for keypad scanning
+    HSOSC #(.CLKHF_DIV(2'b11)) 
           hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
 
     // Keypad scanner

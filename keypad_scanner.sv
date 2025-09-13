@@ -5,17 +5,17 @@
 module keypad_scanner (
     input  logic        clk,           // System clock
     input  logic        rst_n,         // Active-low reset
-    output logic [3:0]  keypad_rows,   // Keypad row outputs (FPGA drives)
-    input  logic [3:0]  keypad_cols,   // Keypad column inputs (FPGA reads)
+    input  logic [3:0]  keypad_rows,   // Keypad row inputs (FPGA reads)
+    output logic [3:0]  keypad_cols,   // Keypad column outputs (FPGA drives)
     output logic [3:0]  key_code,      // 4-bit key code (0-F)
     output logic        key_pressed,   // Key press detected (not used in top level)
     output logic        key_valid      // Valid key press (debounced)
 );
 
     // Essential signals only
-    logic [3:0]  row_counter;          // Row scanning counter
-    logic [3:0]  keypad_cols_sync1, keypad_cols_sync2;  // Double synchronizer
-    logic [3:0]  keypad_cols_sync;     // Final synchronized input
+    logic [3:0]  col_counter;          // Column scanning counter
+    logic [3:0]  keypad_rows_sync1, keypad_rows_sync2;  // Double synchronizer
+    logic [3:0]  keypad_rows_sync;     // Final synchronized input
     logic [3:0]  detected_key;         // Currently detected key
     logic        key_detected;         // Key detection signal
     logic [17:0] debounce_counter;     // Debounce counter
@@ -24,109 +24,109 @@ module keypad_scanner (
     // Double synchronizer to prevent metastability (KEEP THIS!)
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            keypad_cols_sync1 <= 4'b0000;
-            keypad_cols_sync2 <= 4'b0000;
-            keypad_cols_sync <= 4'b0000;
+            keypad_rows_sync1 <= 4'b0000;
+            keypad_rows_sync2 <= 4'b0000;
+            keypad_rows_sync <= 4'b0000;
         end else begin
-            keypad_cols_sync1 <= keypad_cols;
-            keypad_cols_sync2 <= keypad_cols_sync1;
-            keypad_cols_sync <= keypad_cols_sync2;
+            keypad_rows_sync1 <= keypad_rows;
+            keypad_rows_sync2 <= keypad_rows_sync1;
+            keypad_rows_sync <= keypad_rows_sync2;
         end
     end
     
-    // Row scanning counter (cycles through rows 0-3) - MUCH FASTER for testing
-    logic [7:0] scan_counter;  // Very fast row scanning for testing
+    // Column scanning counter (cycles through columns 0-3) - Based on working lab example
+    logic [7:0] scan_counter;  // Column scanning counter
     
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            row_counter <= 4'b0001;  // Start with row 0 (one-hot)
+            col_counter <= 4'b0001;  // Start with column 0 (one-hot)
             scan_counter <= 8'd0;
         end else begin
             scan_counter <= scan_counter + 1;
-            if (scan_counter == 8'd0) begin  // Change row every 256 clock cycles (~21μs at 12MHz)
-                row_counter <= {row_counter[2:0], row_counter[3]};  // Rotate left
+            if (scan_counter == 8'd0) begin  // Change column every 256 clock cycles
+                col_counter <= {col_counter[2:0], col_counter[3]};  // Rotate left
             end
         end
     end
     
-    // Assign row outputs (one-hot encoding) - FPGA drives rows LOW
-    assign keypad_rows = ~row_counter;
+    // Assign column outputs (one-hot encoding) - FPGA drives columns HIGH
+    assign keypad_cols = col_counter;
     
-    // Key detection logic
+    // Key detection logic - Based on working lab example
     always_comb begin
         key_detected = 1'b0;
         detected_key = 4'b0000;
         
-        // Check each row for pressed keys
+        // Check each column for pressed keys
         // Your specific 4x4 keypad layout:
         //     C0  C1  C2  C3
         // R0    1   2   3   C
         // R1    4   5   6   D  
         // R2    7   8   9   E
         // R3    A   0   B   F
-        case (row_counter)
-            4'b0001: begin  // Row 0
-                if (!keypad_cols_sync[0]) begin
+        case (col_counter)
+            4'b0001: begin  // Column 0
+                if (!keypad_rows_sync[0]) begin
                     key_detected = 1'b1;
                     detected_key = 4'b0001;  // Key 1
-                end else if (!keypad_cols_sync[1]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0010;  // Key 2
-                end else if (!keypad_cols_sync[2]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0011;  // Key 3
-                end else if (!keypad_cols_sync[3]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1100;  // Key C
-                end
-            end
-            4'b0010: begin  // Row 1
-                if (!keypad_cols_sync[0]) begin
+                end else if (!keypad_rows_sync[1]) begin
                     key_detected = 1'b1;
                     detected_key = 4'b0100;  // Key 4
-                end else if (!keypad_cols_sync[1]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0101;  // Key 5
-                end else if (!keypad_cols_sync[2]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0110;  // Key 6
-                end else if (!keypad_cols_sync[3]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1101;  // Key D
-                end
-            end
-            4'b0100: begin  // Row 2
-                if (!keypad_cols_sync[0]) begin
+                end else if (!keypad_rows_sync[2]) begin
                     key_detected = 1'b1;
                     detected_key = 4'b0111;  // Key 7
-                end else if (!keypad_cols_sync[1]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1000;  // Key 8
-                end else if (!keypad_cols_sync[2]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1001;  // Key 9
-                end else if (!keypad_cols_sync[3]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1110;  // Key E
-                end
-            end
-            4'b1000: begin  // Row 3
-                if (!keypad_cols_sync[0]) begin
+                end else if (!keypad_rows_sync[3]) begin
                     key_detected = 1'b1;
                     detected_key = 4'b1010;  // Key A
-                end else if (!keypad_cols_sync[1]) begin
+                end
+            end
+            4'b0010: begin  // Column 1
+                if (!keypad_rows_sync[0]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b0010;  // Key 2
+                end else if (!keypad_rows_sync[1]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b0101;  // Key 5
+                end else if (!keypad_rows_sync[2]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b1000;  // Key 8
+                end else if (!keypad_rows_sync[3]) begin
                     key_detected = 1'b1;
                     detected_key = 4'b0000;  // Key 0
-                end else if (!keypad_cols_sync[2]) begin
+                end
+            end
+            4'b0100: begin  // Column 2
+                if (!keypad_rows_sync[0]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b0011;  // Key 3
+                end else if (!keypad_rows_sync[1]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b0110;  // Key 6
+                end else if (!keypad_rows_sync[2]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b1001;  // Key 9
+                end else if (!keypad_rows_sync[3]) begin
                     key_detected = 1'b1;
                     detected_key = 4'b1011;  // Key B
-                end else if (!keypad_cols_sync[3]) begin
+                end
+            end
+            4'b1000: begin  // Column 3
+                if (!keypad_rows_sync[0]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b1100;  // Key C
+                end else if (!keypad_rows_sync[1]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b1101;  // Key D
+                end else if (!keypad_rows_sync[2]) begin
+                    key_detected = 1'b1;
+                    detected_key = 4'b1110;  // Key E
+                end else if (!keypad_rows_sync[3]) begin
                     key_detected = 1'b1;
                     detected_key = 4'b1111;  // Key F
                 end
             end
             default: begin
-                // No key detected in this row
+                // No key detected in this column
                 key_detected = 1'b0;
                 detected_key = 4'b0000;
             end
