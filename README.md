@@ -13,7 +13,6 @@
 
 ### **Support Modules:**
 - **`MUX2.sv`** - 2-to-1 multiplexer (7-bit)
-- **`MUX2_4bit.sv`** - 2-to-1 multiplexer (4-bit)
 
 ### **Documentation:**
 - **`KEYPAD_WIRING.md`** - Complete wiring instructions for 8-pin keypad
@@ -24,6 +23,8 @@
 2. **Connect keypad according to `KEYPAD_WIRING.md`**
 3. **All modules are SystemVerilog compliant and verified**
 4. **Clean pin assignments - no internal signals exposed**
+5. **Uses existing MUX2 for display control**
+6. **Keypad input directly controls display system**
 
 ## ✅ **Lab Requirements Met:**
 - Single seven_segment instance

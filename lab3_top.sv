@@ -1,25 +1,22 @@
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
-// Lab3 Top Module - Clean top-level for Lattice Radiant
+// Lab3 Top Module - Keypad Scanner with Display System
 
 module lab3_top (
-    input  clk,           // External clock input (12 MHz)
-    input  reset,         // Active-low reset signal
-    input  [3:0] keypad_rows,   // Keypad row inputs
-    output [3:0] keypad_cols,   // Keypad column outputs
-    output [6:0] seg,           // Seven-segment display signals
-    output select0,       // Display 0 power control
-    output select1        // Display 1 power control
+    input  logic        clk,           // External clock input (12 MHz)
+    input  logic        reset,         // Active-low reset signal
+    input  logic [3:0]  keypad_rows,   // Keypad row inputs
+    output logic [3:0]  keypad_cols,   // Keypad column outputs
+    output logic [6:0]  seg,           // Seven-segment display signals
+    output logic        select0,       // Display 0 power control
+    output logic        select1        // Display 1 power control
 );
 
     // Internal signals
-    wire [3:0] key_code;
-    wire key_valid;
-    wire [3:0] digit_left;
-    wire [3:0] digit_right;
-    wire [3:0] muxed_input;
-    wire display_select;
-    reg [23:0] divcnt;
+    logic [3:0]  key_code;             // Key code from scanner
+    logic        key_valid;            // Valid key press signal
+    logic [3:0]  digit_left;           // Left display digit
+    logic [3:0]  digit_right;          // Right display digit
 
     // Keypad scanner
     keypad_scanner scanner_inst (
@@ -42,37 +39,16 @@ module lab3_top (
         .digit_right(digit_right)
     );
 
-    // Input multiplexer
-    MUX2_4bit input_mux (
-        .d0(digit_left),
-        .d1(digit_right),
-        .select(display_select),
-        .y(muxed_input)
+    // Use existing Lab2_ES display system (single seven_segment instance)
+    Lab2_ES display_system (
+        .clk(clk),
+        .reset(reset),
+        .s0(digit_left),               // Left digit from keypad
+        .s1(digit_right),              // Right digit from keypad
+        .seg(seg),                     // Seven-segment output
+        .select0(select0),             // Display 0 power control
+        .select1(select1)              // Display 1 power control
     );
 
-    // Seven-segment decoder
-    seven_segment seven_seg_decoder (
-        .num(muxed_input),
-        .seg(seg)
-    );
-
-    // Power multiplexing clock divider
-    parameter HALF_PERIOD = 60_000;
-    
-    always @(posedge clk or negedge reset) begin
-        if (~reset) begin
-            divcnt <= 0;
-            display_select <= 0;
-        end else if (divcnt == (HALF_PERIOD - 1)) begin
-            divcnt <= 0;
-            display_select <= ~display_select;
-        end else begin
-            divcnt <= divcnt + 1;
-        end
-    end
-
-    // Power multiplexing control
-    assign select0 = display_select;
-    assign select1 = ~display_select;
 
 endmodule

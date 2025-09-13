@@ -17,13 +17,8 @@ module Lab2_ES (
     reg display_select;                // Current display selection (0 or 1)
     reg [23:0] divcnt;                 // Clock divider counter for multiplexing
 
-    // 2-to-1 multiplexer for input selection (s0 or s1)
-    MUX2_4bit input_mux (
-        .d0(s0),                       // Input: first 4-bit number
-        .d1(s1),                       // Input: second 4-bit number
-        .select(display_select),       // Select signal (0 = s0, 1 = s1)
-        .y(muxed_input)                // Output: multiplexed 4-bit input
-    );
+    // Simple 4-bit multiplexer for input selection (s0 or s1)
+    assign muxed_input = display_select ? s1 : s0;
 
     // Single seven-segment display decoder (Lab requirement: only ONE instance)
     seven_segment seven_seg_decoder (
