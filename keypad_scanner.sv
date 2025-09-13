@@ -34,166 +34,176 @@ module keypad_scanner (
         end
     end
     
-    // Column scanning counter (cycles through columns 0-3) - Based on working lab example
-    logic [7:0] scan_counter;  // Column scanning counter
+    // Enhanced state machine based on working lab examples
+    typedef enum logic [2:0] {
+        SCAN_COL0, SCAN_COL1, SCAN_COL2, SCAN_COL3,  // Column scanning states
+        DEBOUNCE_WAIT,                                // Debouncing state
+        KEY_VALID,                                    // Key confirmed valid
+        WAIT_RELEASE                                  // Wait for key release
+    } scan_state_t;
     
+    scan_state_t scan_state;
+    logic [5:0] debounce_counter;
+    logic [3:0] current_col;
+    
+    // Enhanced scanning state machine
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
+            scan_state <= SCAN_COL0;
             col_counter <= 4'b0001;  // Start with column 0 (one-hot)
-            scan_counter <= 8'd0;
+            debounce_counter <= 6'd0;
+            current_col <= 4'b0000;
         end else begin
-            scan_counter <= scan_counter + 1;
-            if (scan_counter == 8'd0) begin  // Change column every 256 clock cycles
-                col_counter <= {col_counter[2:0], col_counter[3]};  // Rotate left
-            end
+            case (scan_state)
+                SCAN_COL0: begin
+                    col_counter <= 4'b0001;
+                    current_col <= 4'b0000;
+                    if (key_detected) begin
+                        scan_state <= DEBOUNCE_WAIT;
+                        debounce_counter <= 6'd0;
+                    end else begin
+                        scan_state <= SCAN_COL1;
+                    end
+                end
+                
+                SCAN_COL1: begin
+                    col_counter <= 4'b0010;
+                    current_col <= 4'b0001;
+                    if (key_detected) begin
+                        scan_state <= DEBOUNCE_WAIT;
+                        debounce_counter <= 6'd0;
+                    end else begin
+                        scan_state <= SCAN_COL2;
+                    end
+                end
+                
+                SCAN_COL2: begin
+                    col_counter <= 4'b0100;
+                    current_col <= 4'b0010;
+                    if (key_detected) begin
+                        scan_state <= DEBOUNCE_WAIT;
+                        debounce_counter <= 6'd0;
+                    end else begin
+                        scan_state <= SCAN_COL3;
+                    end
+                end
+                
+                SCAN_COL3: begin
+                    col_counter <= 4'b1000;
+                    current_col <= 4'b0011;
+                    if (key_detected) begin
+                        scan_state <= DEBOUNCE_WAIT;
+                        debounce_counter <= 6'd0;
+                    end else begin
+                        scan_state <= SCAN_COL0;
+                    end
+                end
+                
+                DEBOUNCE_WAIT: begin
+                    if (key_detected) begin
+                        if (debounce_counter >= 6'd15) begin  // 15 clock cycles debounce
+                            scan_state <= KEY_VALID;
+                        end else begin
+                            debounce_counter <= debounce_counter + 1;
+                        end
+                    end else begin
+                        scan_state <= SCAN_COL0;  // Key released during debounce
+                    end
+                end
+                
+                KEY_VALID: begin
+                    scan_state <= WAIT_RELEASE;
+                end
+                
+                WAIT_RELEASE: begin
+                    if (!key_detected) begin
+                        scan_state <= SCAN_COL0;  // Key released, resume scanning
+                    end
+                end
+                
+                default: scan_state <= SCAN_COL0;
+            endcase
         end
     end
     
     // Assign column outputs (one-hot encoding) - FPGA drives columns HIGH
     assign keypad_cols = col_counter;
     
-    // Key detection logic - Based on working lab example
+    // Enhanced key detection logic with proper row scanning
     always_comb begin
         key_detected = 1'b0;
         detected_key = 4'b0000;
         
-        // Check each column for pressed keys
-        // Your specific 4x4 keypad layout:
-        //     C0  C1  C2  C3
-        // R0    1   2   3   C
-        // R1    4   5   6   D  
-        // R2    7   8   9   E
-        // R3    A   0   B   F
-        case (col_counter)
-            4'b0001: begin  // Column 0
-                if (!keypad_rows_sync[0]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0001;  // Key 1
-                end else if (!keypad_rows_sync[1]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0100;  // Key 4
-                end else if (!keypad_rows_sync[2]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0111;  // Key 7
-                end else if (!keypad_rows_sync[3]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1010;  // Key A
+        // Check for any row being pressed (any row goes LOW)
+        if (!keypad_rows_sync[0] || !keypad_rows_sync[1] || !keypad_rows_sync[2] || !keypad_rows_sync[3]) begin
+            key_detected = 1'b1;
+            
+            // Determine which key based on current column and pressed row
+            case (current_col)
+                2'b00: begin  // Column 0
+                    if (!keypad_rows_sync[0]) detected_key = 4'b0001;      // Key 1
+                    else if (!keypad_rows_sync[1]) detected_key = 4'b0100; // Key 4
+                    else if (!keypad_rows_sync[2]) detected_key = 4'b0111; // Key 7
+                    else if (!keypad_rows_sync[3]) detected_key = 4'b1010; // Key A
                 end
-            end
-            4'b0010: begin  // Column 1
-                if (!keypad_rows_sync[0]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0010;  // Key 2
-                end else if (!keypad_rows_sync[1]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0101;  // Key 5
-                end else if (!keypad_rows_sync[2]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1000;  // Key 8
-                end else if (!keypad_rows_sync[3]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0000;  // Key 0
+                2'b01: begin  // Column 1
+                    if (!keypad_rows_sync[0]) detected_key = 4'b0010;      // Key 2
+                    else if (!keypad_rows_sync[1]) detected_key = 4'b0101; // Key 5
+                    else if (!keypad_rows_sync[2]) detected_key = 4'b1000; // Key 8
+                    else if (!keypad_rows_sync[3]) detected_key = 4'b0000; // Key 0
                 end
-            end
-            4'b0100: begin  // Column 2
-                if (!keypad_rows_sync[0]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0011;  // Key 3
-                end else if (!keypad_rows_sync[1]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b0110;  // Key 6
-                end else if (!keypad_rows_sync[2]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1001;  // Key 9
-                end else if (!keypad_rows_sync[3]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1011;  // Key B
+                2'b10: begin  // Column 2
+                    if (!keypad_rows_sync[0]) detected_key = 4'b0011;      // Key 3
+                    else if (!keypad_rows_sync[1]) detected_key = 4'b0110; // Key 6
+                    else if (!keypad_rows_sync[2]) detected_key = 4'b1001; // Key 9
+                    else if (!keypad_rows_sync[3]) detected_key = 4'b1011; // Key B
                 end
-            end
-            4'b1000: begin  // Column 3
-                if (!keypad_rows_sync[0]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1100;  // Key C
-                end else if (!keypad_rows_sync[1]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1101;  // Key D
-                end else if (!keypad_rows_sync[2]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1110;  // Key E
-                end else if (!keypad_rows_sync[3]) begin
-                    key_detected = 1'b1;
-                    detected_key = 4'b1111;  // Key F
+                2'b11: begin  // Column 3
+                    if (!keypad_rows_sync[0]) detected_key = 4'b1100;      // Key C
+                    else if (!keypad_rows_sync[1]) detected_key = 4'b1101; // Key D
+                    else if (!keypad_rows_sync[2]) detected_key = 4'b1110; // Key E
+                    else if (!keypad_rows_sync[3]) detected_key = 4'b1111; // Key F
                 end
-            end
-            default: begin
-                // No key detected in this column
-                key_detected = 1'b0;
-                detected_key = 4'b0000;
-            end
-        endcase
+            endcase
+        end
     end
     
-    // Simple debouncing state machine (KEEP THIS!)
-    typedef enum logic [1:0] {
-        IDLE,           // No key detected
-        DEBOUNCE_WAIT,  // Key detected, waiting for debounce
-        KEY_HELD        // Key confirmed valid
-    } debounce_state_t;
-    
-    debounce_state_t debounce_state;
-    
+    // Simplified output logic using enhanced state machine
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            debounce_state <= IDLE;
-            debounce_counter <= 18'd0;
             key_code <= 4'h0;
             key_pressed <= 1'b0;
             key_valid <= 1'b0;
             key_held <= 1'b0;
         end else begin
-            case (debounce_state)
-                IDLE: begin
+            case (scan_state)
+                SCAN_COL0, SCAN_COL1, SCAN_COL2, SCAN_COL3: begin
                     key_valid <= 1'b0;
-                    if (key_detected && !key_held) begin
-                        debounce_state <= DEBOUNCE_WAIT;
-                        debounce_counter <= 18'd0;
+                    key_pressed <= 1'b0;
+                    if (key_detected) begin
                         key_code <= detected_key;
-                        key_pressed <= 1'b1;
-                    end else begin
-                        key_pressed <= 1'b0;
                     end
                 end
                 
                 DEBOUNCE_WAIT: begin
-                    if (key_detected && (detected_key == key_code)) begin
-                        if (debounce_counter >= 18'd120000) begin  // 10ms at 12MHz (faster for testing)
-                            debounce_state <= KEY_HELD;
-                            key_valid <= 1'b1;
-                            key_held <= 1'b1;
-                        end else begin
-                            debounce_counter <= debounce_counter + 1;
-                        end
-                    end else begin
-                        debounce_state <= IDLE;
-                        key_pressed <= 1'b0;
-                    end
+                    key_valid <= 1'b0;
+                    key_pressed <= 1'b0;
                 end
                 
-                KEY_HELD: begin
+                KEY_VALID: begin
+                    key_valid <= 1'b1;
+                    key_pressed <= 1'b1;
+                    key_held <= 1'b1;
+                end
+                
+                WAIT_RELEASE: begin
                     key_valid <= 1'b0;
-                    if (!key_detected) begin
-                        debounce_state <= IDLE;
-                        key_held <= 1'b0;
-                        key_pressed <= 1'b0;
-                    end
+                    key_pressed <= 1'b0;
                 end
                 
                 default: begin
-                    // Invalid state - reset to IDLE
-                    debounce_state <= IDLE;
                     key_valid <= 1'b0;
                     key_pressed <= 1'b0;
-                    key_held <= 1'b0;
                 end
             endcase
         end
