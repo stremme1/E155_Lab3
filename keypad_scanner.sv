@@ -45,6 +45,7 @@ module keypad_scanner (
     scan_state_t scan_state;
     logic [5:0] debounce_counter;
     logic [3:0] current_col;
+    logic [7:0] scan_counter;  // Counter to slow down column scanning
     
     // Enhanced scanning state machine
     always_ff @(posedge clk or negedge rst_n) begin
@@ -53,6 +54,7 @@ module keypad_scanner (
             col_counter <= 4'b0001;  // Start with column 0 (one-hot)
             debounce_counter <= 6'd0;
             current_col <= 4'b0000;
+            scan_counter <= 8'd0;
         end else begin
             case (scan_state)
                 SCAN_COL0: begin
@@ -61,8 +63,11 @@ module keypad_scanner (
                     if (key_detected) begin
                         scan_state <= DEBOUNCE_WAIT;
                         debounce_counter <= 6'd0;
-                    end else begin
+                    end else if (scan_counter >= 8'd100) begin  // Wait 100 clock cycles before next column
                         scan_state <= SCAN_COL1;
+                        scan_counter <= 8'd0;
+                    end else begin
+                        scan_counter <= scan_counter + 1;
                     end
                 end
                 
@@ -72,8 +77,11 @@ module keypad_scanner (
                     if (key_detected) begin
                         scan_state <= DEBOUNCE_WAIT;
                         debounce_counter <= 6'd0;
-                    end else begin
+                    end else if (scan_counter >= 8'd100) begin  // Wait 100 clock cycles before next column
                         scan_state <= SCAN_COL2;
+                        scan_counter <= 8'd0;
+                    end else begin
+                        scan_counter <= scan_counter + 1;
                     end
                 end
                 
@@ -83,8 +91,11 @@ module keypad_scanner (
                     if (key_detected) begin
                         scan_state <= DEBOUNCE_WAIT;
                         debounce_counter <= 6'd0;
-                    end else begin
+                    end else if (scan_counter >= 8'd100) begin  // Wait 100 clock cycles before next column
                         scan_state <= SCAN_COL3;
+                        scan_counter <= 8'd0;
+                    end else begin
+                        scan_counter <= scan_counter + 1;
                     end
                 end
                 
@@ -94,14 +105,17 @@ module keypad_scanner (
                     if (key_detected) begin
                         scan_state <= DEBOUNCE_WAIT;
                         debounce_counter <= 6'd0;
-                    end else begin
+                    end else if (scan_counter >= 8'd100) begin  // Wait 100 clock cycles before next column
                         scan_state <= SCAN_COL0;
+                        scan_counter <= 8'd0;
+                    end else begin
+                        scan_counter <= scan_counter + 1;
                     end
                 end
                 
                 DEBOUNCE_WAIT: begin
                     if (key_detected) begin
-                        if (debounce_counter >= 6'd15) begin  // 15 clock cycles debounce
+                        if (debounce_counter >= 6'd60) begin  // 60 clock cycles debounce (~20ms at 3MHz)
                             scan_state <= KEY_VALID;
                         end else begin
                             debounce_counter <= debounce_counter + 1;
