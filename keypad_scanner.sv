@@ -34,16 +34,16 @@ module keypad_scanner (
         end
     end
     
-    // Row scanning counter (cycles through rows 0-3)
-    logic [15:0] scan_counter;  // Slow down row scanning
+    // Row scanning counter (cycles through rows 0-3) - MUCH FASTER for testing
+    logic [7:0] scan_counter;  // Very fast row scanning for testing
     
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             row_counter <= 4'b0001;  // Start with row 0 (one-hot)
-            scan_counter <= 16'd0;
+            scan_counter <= 8'd0;
         end else begin
             scan_counter <= scan_counter + 1;
-            if (scan_counter == 16'd0) begin  // Change row every 65536 clock cycles
+            if (scan_counter == 8'd0) begin  // Change row every 256 clock cycles (~21μs at 12MHz)
                 row_counter <= {row_counter[2:0], row_counter[3]};  // Rotate left
             end
         end
@@ -166,7 +166,7 @@ module keypad_scanner (
                 
                 DEBOUNCE_WAIT: begin
                     if (key_detected && (detected_key == key_code)) begin
-                        if (debounce_counter >= 18'd240000) begin  // 20ms at 12MHz
+                        if (debounce_counter >= 18'd120000) begin  // 10ms at 12MHz (faster for testing)
                             debounce_state <= KEY_HELD;
                             key_valid <= 1'b1;
                             key_held <= 1'b1;
