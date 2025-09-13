@@ -29,14 +29,14 @@ module Lab2_ES (
 
     // --- Power Multiplexing at ~100 Hz ---
     // This controls which display is powered on to create the illusion of both being on
-    localparam HALF_PERIOD = 60_000;   // Half period for 12 MHz input clock (100 Hz switching)
+    localparam HALF_PERIOD = 6_000_000;   // Half period for 12 MHz input clock (1 Hz switching for testing)
 
     // Clock divider for power multiplexing
     always @(posedge clk or negedge reset) begin
         if (~reset) begin              // Async active-low reset
             divcnt <= 0;
             display_select <= 0;
-        end else if (divcnt == HALF_PERIOD - 1) begin
+        end else if (divcnt >= HALF_PERIOD - 1) begin
             divcnt <= 0;
             display_select <= ~display_select; // Toggle between displays
         end else begin
