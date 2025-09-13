@@ -139,6 +139,12 @@ module keypad_scanner (
             key_detected = 1'b1;
             
             // Determine which key based on current column and pressed row
+            // EMMETT'S KEYPAD LAYOUT (different from working code):
+            //     C0  C1  C2  C3
+            // R0    1   2   3   C
+            // R1    4   5   6   D  
+            // R2    7   8   9   E
+            // R3    A   0   B   F
             case (current_col)
                 2'b00: begin  // Column 0
                     if (!keypad_rows_sync[0]) detected_key = 4'b0001;      // Key 1
