@@ -3,7 +3,8 @@
 ## 🎯 **Files for FPGA Implementation:**
 
 ### **Top-Level Module:**
-- **`lab3_keypad_integrated.sv`** - Main top-level module for FPGA flashing
+- **`lab3_top.sv`** - Main top-level module for FPGA flashing (SystemVerilog)
+- **`lab3_top_verilog.sv`** - Alternative top-level module (Standard Verilog)
 
 ### **Core Modules:**
 - **`keypad_scanner.sv`** - 4x4 keypad scanner with debouncing & synchronizers
@@ -20,9 +21,10 @@
 
 ## 🚀 **Ready for Lattice Radiant:**
 
-1. **Use `lab3_keypad_integrated.sv` as your top-level module**
+1. **Use `lab3_top.sv` as your top-level module (or `lab3_top_verilog.sv` for standard Verilog)**
 2. **Connect keypad according to `KEYPAD_WIRING.md`**
 3. **All modules are SystemVerilog compliant and verified**
+4. **Clean pin assignments - no internal signals exposed**
 
 ## ✅ **Lab Requirements Met:**
 - Single seven_segment instance
