@@ -41,7 +41,7 @@ module keypad_scanner (
             scan_counter <= 8'd0;
         end else begin
             scan_counter <= scan_counter + 1;
-            if (scan_counter == 8'd0) begin
+            if (scan_counter == 8'd255) begin  // Change row every 256 clock cycles
                 row_counter <= {row_counter[2:0], row_counter[3]};
             end
         end
