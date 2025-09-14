@@ -18,8 +18,10 @@ module lab3_top (
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
 
-    // Simple clock generator for testing
-    clock_gen clk_gen (.clk(clk));
+    // Internal high-speed oscillator with proper division for 3MHz system clock
+    // CLKHF_DIV = 2'b10 gives 3MHz from 12MHz internal oscillator
+    HSOSC #(.CLKHF_DIV(2'b10)) 
+          hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
 
     // Keypad scanner
     keypad_scanner scanner_inst (
