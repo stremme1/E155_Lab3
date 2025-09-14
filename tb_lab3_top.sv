@@ -27,7 +27,7 @@ module tb_lab3_top();
     // Clock generation (3MHz)
     initial begin
         clk = 0;
-        forever #167 clk = ~clk; // 3MHz clock
+        forever #167 clk = ~clk; // 3MHz clock (333ns period)
     end
 
     // Test stimulus
@@ -54,49 +54,49 @@ module tb_lab3_top();
         $display("Pressing key '1'...");
         wait(keypad_rows == 4'b1110); // Wait for row 0
         keypad_cols = 4'b1110; // Col 0 pressed
-        #2000; // Wait for debounce
+        #20000000; // Wait for debounce (20ms)
         $display("Time %0t: seg=%b, select0=%b, select1=%b", 
                  $time, seg, select0, select1);
         
         // Release key
         keypad_cols = 4'b1111;
-        #1000;
+        #1000000; // 1ms
         
         // Press key '5' (Row 1, Col 1)
         $display("Pressing key '5'...");
         wait(keypad_rows == 4'b1101); // Wait for row 1
         keypad_cols = 4'b1101; // Col 1 pressed
-        #2000; // Wait for debounce
+        #20000000; // Wait for debounce (20ms)
         $display("Time %0t: seg=%b, select0=%b, select1=%b", 
                  $time, seg, select0, select1);
         
         // Release key
         keypad_cols = 4'b1111;
-        #1000;
+        #1000000; // 1ms
         
         // Press key 'A' (Row 3, Col 0)
         $display("Pressing key 'A'...");
         wait(keypad_rows == 4'b0111); // Wait for row 3
         keypad_cols = 4'b1110; // Col 0 pressed
-        #2000; // Wait for debounce
+        #20000000; // Wait for debounce (20ms)
         $display("Time %0t: seg=%b, select0=%b, select1=%b", 
                  $time, seg, select0, select1);
         
         // Release key
         keypad_cols = 4'b1111;
-        #1000;
+        #1000000; // 1ms
         
         // Press key 'F' (Row 3, Col 3)
         $display("Pressing key 'F'...");
         wait(keypad_rows == 4'b0111); // Wait for row 3
         keypad_cols = 4'b0111; // Col 3 pressed
-        #2000; // Wait for debounce
+        #20000000; // Wait for debounce (20ms)
         $display("Time %0t: seg=%b, select0=%b, select1=%b", 
                  $time, seg, select0, select1);
         
         // Release key
         keypad_cols = 4'b1111;
-        #5000;
+        #5000000; // 5ms
         
         $display("\n=== Test Complete ===");
         $finish;
@@ -133,7 +133,6 @@ module lab3_top_sim (
         .keypad_rows(keypad_rows),
         .keypad_cols(keypad_cols),
         .key_code(key_code),
-        .key_pressed(),
         .key_valid(key_valid)
     );
     

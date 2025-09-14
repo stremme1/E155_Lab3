@@ -18,8 +18,9 @@ module lab3_top (
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
 
-    // Internal high-speed oscillator with slower division for keypad scanning
-    HSOSC #(.CLKHF_DIV(2'b11)) 
+    // Internal high-speed oscillator with proper division for 3MHz system clock
+    // CLKHF_DIV = 2'b10 gives 3MHz from 12MHz internal oscillator
+    HSOSC #(.CLKHF_DIV(2'b10)) 
           hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
 
     // Keypad scanner
@@ -29,7 +30,6 @@ module lab3_top (
         .keypad_rows(keypad_rows),
         .keypad_cols(keypad_cols),
         .key_code(key_code),
-        .key_pressed(),
         .key_valid(key_valid)
     );
     
@@ -44,9 +44,10 @@ module lab3_top (
     );
 
     // Use existing Lab2_ES display system (single seven_segment instance)
+    // Note: Lab2_ES expects active-high reset, so we invert the active-low reset signal
     Lab2_ES display_system (
         .clk(clk),
-        .reset(reset),
+        .reset(~reset),                // Invert active-low reset to active-high
         .s0(digit_left),               // Left digit from keypad
         .s1(digit_right),              // Right digit from keypad
         .seg(seg),                     // Seven-segment output

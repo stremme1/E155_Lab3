@@ -8,7 +8,6 @@ module keypad_scanner (
     output logic [3:0]  keypad_rows,   // Keypad row outputs (FPGA drives)
     input  logic [3:0]  keypad_cols,   // Keypad column inputs (FPGA reads)
     output logic [3:0]  key_code,      // 4-bit key code (0-F)
-    output logic        key_pressed,   // Key press detected (not used in top level)
     output logic        key_valid      // Valid key press (debounced)
 );
 
@@ -17,7 +16,7 @@ module keypad_scanner (
     logic [3:0]  keypad_cols_sync1, keypad_cols_sync2, keypad_cols_sync;  // Double synchronizer
     logic [3:0]  detected_key;         // Currently detected key
     logic        key_detected;         // Key detection signal
-    logic [17:0] debounce_counter;     // Debounce counter
+    logic [16:0] debounce_counter;     // Debounce counter (17 bits for 3MHz timing)
     logic        key_held;             // Key is being held down
     
     // Double synchronizer to prevent metastability
@@ -42,7 +41,7 @@ module keypad_scanner (
             scan_counter <= 16'd0;
         end else begin
             scan_counter <= scan_counter + 1;
-            if (scan_counter == 16'd11999) begin  // Change row every 12000 cycles (2ms at 6MHz)
+            if (scan_counter == 16'd5999) begin   // Change row every 6000 cycles (2ms at 3MHz)
                 scan_counter <= 16'd0;
                 row_counter <= {row_counter[2:0], row_counter[3]};  // Rotate left
             end
@@ -114,9 +113,8 @@ module keypad_scanner (
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             debounce_state <= IDLE;
-            debounce_counter <= 18'd0;
+            debounce_counter <= 17'd0;
             key_code <= 4'h0;
-            key_pressed <= 1'b0;
             key_valid <= 1'b0;
             key_held <= 1'b0;
         end else begin
@@ -125,17 +123,14 @@ module keypad_scanner (
                     key_valid <= 1'b0;
                     if (key_detected && !key_held) begin
                         debounce_state <= DEBOUNCE_WAIT;
-                        debounce_counter <= 18'd0;
+                        debounce_counter <= 17'd0;
                         key_code <= detected_key;
-                        key_pressed <= 1'b1;
-                    end else begin
-                        key_pressed <= 1'b0;
                     end
                 end
                 
                 DEBOUNCE_WAIT: begin
                     if (key_detected && (detected_key == key_code)) begin
-                        if (debounce_counter >= 18'd120000) begin  // 20ms at 6MHz
+                        if (debounce_counter >= 17'd60000) begin   // 20ms at 3MHz
                             debounce_state <= KEY_HELD;
                             key_valid <= 1'b1;
                             key_held <= 1'b1;
@@ -144,7 +139,6 @@ module keypad_scanner (
                         end
                     end else begin
                         debounce_state <= IDLE;
-                        key_pressed <= 1'b0;
                     end
                 end
                 
@@ -153,7 +147,6 @@ module keypad_scanner (
                     if (!key_detected) begin
                         debounce_state <= IDLE;
                         key_held <= 1'b0;
-                        key_pressed <= 1'b0;
                     end
                 end
                 
@@ -161,7 +154,6 @@ module keypad_scanner (
                     // Invalid state - reset to IDLE
                     debounce_state <= IDLE;
                     key_valid <= 1'b0;
-                    key_pressed <= 1'b0;
                     key_held <= 1'b0;
                 end
             endcase
