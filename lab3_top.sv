@@ -4,8 +4,8 @@
 
 module lab3_top (
     input  logic        reset,
-    output logic [3:0]  keypad_rows,
-    input  logic [3:0]  keypad_cols,
+    output logic [3:0]  keypad_cols,    // FPGA drives columns (output)
+    input  logic [3:0]  keypad_rows,    // FPGA reads rows (input)
     output logic [6:0]  seg,
     output logic        select0,
     output logic        select1
@@ -39,8 +39,8 @@ module lab3_top (
     keypad_scanner scanner (
         .clk(clk_div),
         .rst_n(reset),
-        .keypad_rows(keypad_rows),
-        .keypad_cols(keypad_cols),
+        .keypad_cols(keypad_cols),    // FPGA drives columns
+        .keypad_rows(keypad_rows),    // FPGA reads rows
         .key_code(key_code),
         .key_pressed(),
         .key_valid(key_valid)
