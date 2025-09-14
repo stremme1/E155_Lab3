@@ -7,8 +7,8 @@ module tb_keypad_scanner();
     // Testbench signals
     logic        clk;
     logic        rst_n;
-    logic [3:0]  keypad_rows;
-    logic [3:0]  keypad_cols;
+    logic [3:0]  keypad_cols;    // FPGA drives columns (output)
+    logic [3:0]  keypad_rows;    // FPGA reads rows (input)
     logic [3:0]  key_code;
     logic        key_pressed;
     logic        key_valid;
@@ -17,8 +17,8 @@ module tb_keypad_scanner();
     keypad_scanner dut (
         .clk(clk),
         .rst_n(rst_n),
-        .keypad_rows(keypad_rows),
-        .keypad_cols(keypad_cols),
+        .keypad_cols(keypad_cols),    // FPGA drives columns
+        .keypad_rows(keypad_rows),    // FPGA reads rows
         .key_code(key_code),
         .key_pressed(key_pressed),
         .key_valid(key_valid)

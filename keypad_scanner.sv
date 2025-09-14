@@ -5,8 +5,8 @@
 module keypad_scanner (
     input  logic        clk,
     input  logic        rst_n,
-    output logic [3:0]  keypad_cols,    // FPGA drives columns (output) - like Jackson's design
-    input  logic [3:0]  keypad_rows,    // FPGA reads rows (input) - like Jackson's design
+    output logic [3:0]  keypad_cols,    // FPGA drives columns (output) 
+    input  logic [3:0]  keypad_rows,    // FPGA reads rows (input) 
     output logic [3:0]  key_code,
     output logic        key_pressed,
     output logic        key_valid
@@ -21,7 +21,7 @@ module keypad_scanner (
     logic        key_held;
     logic [7:0]  scan_counter;
     
-    // Double synchronizer for rows (like Jackson's design)
+    // Double synchronizer for rows 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             keypad_rows_sync1 <= 4'b0000;
@@ -34,7 +34,7 @@ module keypad_scanner (
         end
     end
     
-    // Column scanning counter (like Jackson's design)
+    // Column scanning counter
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             col_counter <= 4'b0001;
