@@ -143,10 +143,12 @@ module keypad_scanner (
                         end else begin
                             debounce_counter <= debounce_counter + 1;
                         end
-                    end else begin
+                    end else if (!key_detected) begin
+                        // Key released during debounce - reset
                         debounce_state <= IDLE;
                         key_latched <= 1'b0;
                     end
+                    // If key_detected but different key, keep waiting (key might be bouncing)
                 end
                 
                 KEY_HELD: begin
