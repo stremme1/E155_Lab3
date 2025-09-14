@@ -28,7 +28,7 @@ module lab3_top (
             clk_div <= 1'b0;
         end else begin
             clk_counter <= clk_counter + 1;
-            if (clk_counter == 16'd9999) begin  // Divide by 10000 for ~300Hz from 3MHz
+            if (clk_counter == 16'd2999) begin  // Divide by 3000 for ~1kHz from 3MHz
                 clk_counter <= 16'd0;
                 clk_div <= ~clk_div;
             end
