@@ -16,6 +16,8 @@ module keypad_scanner (
     logic [3:0]  keypad_cols_sync1, keypad_cols_sync2, keypad_cols_sync;  // Double synchronizer
     logic [3:0]  detected_key;         // Currently detected key
     logic        key_detected;         // Key detection signal
+    logic [3:0]  latched_key;          // Latched key for debounce
+    logic        key_latched;          // Key has been latched for debounce
     logic [16:0] debounce_counter;     // Debounce counter (17 bits for 3MHz timing)
     logic        key_held;             // Key is being held down
     
@@ -41,7 +43,7 @@ module keypad_scanner (
             scan_counter <= 16'd0;
         end else begin
             scan_counter <= scan_counter + 1;
-            if (scan_counter == 16'd5999) begin   // Change row every 6000 cycles (2ms at 3MHz)
+            if (scan_counter >= 16'd5999) begin   // Change row every 6000 cycles (2ms at 3MHz)
                 scan_counter <= 16'd0;
                 row_counter <= {row_counter[2:0], row_counter[3]};  // Rotate left
             end
@@ -117,28 +119,33 @@ module keypad_scanner (
             key_code <= 4'h0;
             key_valid <= 1'b0;
             key_held <= 1'b0;
+            latched_key <= 4'h0;
+            key_latched <= 1'b0;
         end else begin
             case (debounce_state)
                 IDLE: begin
                     key_valid <= 1'b0;
-                    if (key_detected && !key_held) begin
+                    if (key_detected && !key_held && !key_latched) begin
                         debounce_state <= DEBOUNCE_WAIT;
                         debounce_counter <= 17'd0;
-                        key_code <= detected_key;
+                        latched_key <= detected_key;
+                        key_latched <= 1'b1;
                     end
                 end
                 
                 DEBOUNCE_WAIT: begin
-                    if (key_detected && (detected_key == key_code)) begin
-                        if (debounce_counter >= 17'd60000) begin   // 20ms at 3MHz
+                    if (key_detected && (detected_key == latched_key)) begin
+                        if (debounce_counter >= 17'd100) begin     // Shorter for debug (was 60000)
                             debounce_state <= KEY_HELD;
                             key_valid <= 1'b1;
                             key_held <= 1'b1;
+                            key_code <= latched_key;
                         end else begin
                             debounce_counter <= debounce_counter + 1;
                         end
                     end else begin
                         debounce_state <= IDLE;
+                        key_latched <= 1'b0;
                     end
                 end
                 
@@ -147,6 +154,7 @@ module keypad_scanner (
                     if (!key_detected) begin
                         debounce_state <= IDLE;
                         key_held <= 1'b0;
+                        key_latched <= 1'b0;
                     end
                 end
                 
@@ -155,6 +163,7 @@ module keypad_scanner (
                     debounce_state <= IDLE;
                     key_valid <= 1'b0;
                     key_held <= 1'b0;
+                    key_latched <= 1'b0;
                 end
             endcase
         end
