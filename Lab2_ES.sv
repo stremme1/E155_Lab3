@@ -30,7 +30,7 @@ module Lab2_ES (
 
     // --- Power Multiplexing at ~1 kHz ---
     // This controls which display is powered on to create the illusion of both being on
-    localparam HALF_PERIOD = 6_000;   // Half period for 12 MHz input clock (1 kHz switching - much faster)
+    localparam HALF_PERIOD = 1_500;   // Half period for 3 MHz input clock (1 kHz switching)
 
     // Clock divider for power multiplexing
     always @(posedge clk or negedge reset) begin
