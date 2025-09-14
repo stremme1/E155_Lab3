@@ -14,9 +14,10 @@ module keypad_controller (
 );
 
     // FSM State Definition
-    typedef enum logic [1:0] {
+    typedef enum logic [2:0] {
         INIT,           // Initial state - display "00"
         WAIT_KEY,       // Waiting for key press
+        UPDATE_LEFT,    // Update left digit with first key
         UPDATE_RIGHT,   // Update right digit (shift left to right)
         HOLD_KEY        // Key is held, ignore additional inputs
     } fsm_state_t;
@@ -57,13 +58,29 @@ module keypad_controller (
             WAIT_KEY: begin
                 // Wait for valid key press
                 if (key_valid) begin
-                    // Always shift left to right for new key presses
-                    next_state = UPDATE_RIGHT;
+                    // Check if this is the first key press (both digits are 0)
+                    if (left_digit_reg == 4'h0 && right_digit_reg == 4'h0) begin
+                        next_state = UPDATE_LEFT;
+                    end else begin
+                        next_state = UPDATE_RIGHT;
+                    end
+                end
+            end
+            
+            UPDATE_LEFT: begin
+                // First key press - put in left position, right stays 0
+                next_left_digit = key_code;
+                next_right_digit = 4'h0;  // Right stays 0 for first key
+                // Handle race condition: if key_valid goes low, return to WAIT_KEY
+                if (!key_valid) begin
+                    next_state = WAIT_KEY;
+                end else begin
+                    next_state = HOLD_KEY;
                 end
             end
             
             UPDATE_RIGHT: begin
-                // Shift left to right, new key to left position
+                // Subsequent key presses - shift left to right, new key to left
                 next_left_digit = key_code;
                 next_right_digit = left_digit_reg;
                 // Handle race condition: if key_valid goes low, return to WAIT_KEY

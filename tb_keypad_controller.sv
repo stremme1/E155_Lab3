@@ -46,12 +46,26 @@ module tb_keypad_controller();
         #1000;
         $display("After reset: digit_left = %h, digit_right = %h", digit_left, digit_right);
         
+        // Verify initial state is "00"
+        if (digit_left == 4'h0 && digit_right == 4'h0) begin
+            $display("✓ Initial state correctly shows '00'");
+        end else begin
+            $display("✗ ERROR: Initial state should be '00', got %h%h", digit_left, digit_right);
+        end
+        
         // Test first key press (should go to left position)
         $display("Testing first key press - Key '5'...");
         key_code = 4'h5;
         key_valid = 1;
         #1000; // Wait for state transition
         $display("After key '5': digit_left = %h, digit_right = %h", digit_left, digit_right);
+        
+        // Verify first key goes to left position, right stays 0
+        if (digit_left == 4'h5 && digit_right == 4'h0) begin
+            $display("✓ First key correctly goes to left position: '50'");
+        end else begin
+            $display("✗ ERROR: First key should show '50', got %h%h", digit_left, digit_right);
+        end
         
         // Release key
         key_valid = 0;
