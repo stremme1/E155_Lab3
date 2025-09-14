@@ -28,13 +28,13 @@ module Lab2_ES (
     );
 
 
-    // --- Power Multiplexing at ~1 kHz ---
+    // --- Power Multiplexing at ~60 Hz ---
     // This controls which display is powered on to create the illusion of both being on
-    localparam HALF_PERIOD = 1_500;   // Half period for 3 MHz input clock (1 kHz switching)
+    localparam HALF_PERIOD = 25_000;   // Half period for 3 MHz input clock (~60 Hz switching)
 
     // Clock divider for power multiplexing
     always @(posedge clk or negedge reset) begin
-        if (~reset) begin              // Async active-low reset
+        if (!reset) begin              // Async active-low reset
             divcnt <= 0;
             display_select <= 0;
         end else if (divcnt >= HALF_PERIOD - 1) begin
@@ -46,7 +46,7 @@ module Lab2_ES (
     end
 
     // Power multiplexing control for PNP transistors
-    assign select0 = display_select;   // Controls PNP for Display 0 (shows s0)
-    assign select1 = ~display_select;  // Controls PNP for Display 1 (shows s1), opposite phase
+    assign select0 = ~display_select;  // Controls PNP for Display 0 (shows s0) - inverted for PNP
+    assign select1 = display_select;   // Controls PNP for Display 1 (shows s1) - inverted for PNP
 
 endmodule
