@@ -24,9 +24,9 @@ module keypad_scanner (
     // Double synchronizer to prevent metastability
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            keypad_cols_sync1 <= 4'b0000;
-            keypad_cols_sync2 <= 4'b0000;
-            keypad_cols_sync <= 4'b0000;
+            keypad_cols_sync1 <= 4'b1111;  // Reset to idle state (no keys pressed)
+            keypad_cols_sync2 <= 4'b1111;
+            keypad_cols_sync <= 4'b1111;
         end else begin
             keypad_cols_sync1 <= keypad_cols;
             keypad_cols_sync2 <= keypad_cols_sync1;
@@ -135,7 +135,7 @@ module keypad_scanner (
                 
                 DEBOUNCE_WAIT: begin
                     if (key_detected && (detected_key == latched_key)) begin
-                        if (debounce_counter >= 17'd100) begin     // Shorter for debug (was 60000)
+                        if (debounce_counter >= 17'd60000) begin   // 20ms at 3MHz
                             debounce_state <= KEY_HELD;
                             key_valid <= 1'b1;
                             key_held <= 1'b1;
