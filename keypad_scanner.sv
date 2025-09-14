@@ -1,27 +1,27 @@
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
-// Clean Keypad Scanner - Keeps synchronizers and state machine, removes complexity
+// Keypad Scanner
 
 module keypad_scanner (
-    input  logic        clk,           // System clock
-    input  logic        rst_n,         // Active-low reset
-    output logic [3:0]  keypad_rows,   // Keypad row outputs (FPGA drives)
-    input  logic [3:0]  keypad_cols,   // Keypad column inputs (FPGA reads)
-    output logic [3:0]  key_code,      // 4-bit key code (0-F)
-    output logic        key_pressed,   // Key press detected (not used in top level)
-    output logic        key_valid      // Valid key press (debounced)
+    input  logic        clk,
+    input  logic        rst_n,
+    output logic [3:0]  keypad_rows,
+    input  logic [3:0]  keypad_cols,
+    output logic [3:0]  key_code,
+    output logic        key_pressed,
+    output logic        key_valid
 );
 
-    // Essential signals only
-    logic [3:0]  row_counter;          // Row scanning counter
-    logic [3:0]  keypad_cols_sync1, keypad_cols_sync2;  // Double synchronizer
-    logic [3:0]  keypad_cols_sync;     // Final synchronized input
-    logic [3:0]  detected_key;         // Currently detected key
-    logic        key_detected;         // Key detection signal
-    logic [17:0] debounce_counter;     // Debounce counter
-    logic        key_held;             // Key is being held down
+    logic [3:0]  row_counter;
+    logic [3:0]  keypad_cols_sync1, keypad_cols_sync2;
+    logic [3:0]  keypad_cols_sync;
+    logic [3:0]  detected_key;
+    logic        key_detected;
+    logic [17:0] debounce_counter;
+    logic        key_held;
+    logic [7:0]  scan_counter;
     
-    // Double synchronizer to prevent metastability (KEEP THIS!)
+    // Double synchronizer
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             keypad_cols_sync1 <= 4'b0000;
@@ -34,22 +34,20 @@ module keypad_scanner (
         end
     end
     
-    // Row scanning counter (cycles through rows 0-3) - MUCH FASTER for testing
-    logic [7:0] scan_counter;  // Very fast row scanning for testing
-    
+    // Row scanning counter
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            row_counter <= 4'b0001;  // Start with row 0 (one-hot)
+            row_counter <= 4'b0001;
             scan_counter <= 8'd0;
         end else begin
             scan_counter <= scan_counter + 1;
-            if (scan_counter == 8'd0) begin  // Change row every 256 clock cycles (~21μs at 12MHz)
-                row_counter <= {row_counter[2:0], row_counter[3]};  // Rotate left
+            if (scan_counter == 8'd0) begin
+                row_counter <= {row_counter[2:0], row_counter[3]};
             end
         end
     end
     
-    // Assign row outputs (one-hot encoding) - FPGA drives rows LOW
+    // Row outputs (FPGA drives rows LOW)
     assign keypad_rows = ~row_counter;
     
     // Key detection logic
@@ -57,13 +55,6 @@ module keypad_scanner (
         key_detected = 1'b0;
         detected_key = 4'b0000;
         
-        // Check each row for pressed keys
-        // Your specific 4x4 keypad layout:
-        //     C0  C1  C2  C3
-        // R0    1   2   3   C
-        // R1    4   5   6   D  
-        // R2    7   8   9   E
-        // R3    A   0   B   F
         case (row_counter)
             4'b0001: begin  // Row 0
                 if (!keypad_cols_sync[0]) begin
@@ -126,18 +117,17 @@ module keypad_scanner (
                 end
             end
             default: begin
-                // No key detected in this row
                 key_detected = 1'b0;
                 detected_key = 4'b0000;
             end
         endcase
     end
     
-    // Simple debouncing state machine (KEEP THIS!)
+    // Debouncing state machine
     typedef enum logic [1:0] {
-        IDLE,           // No key detected
-        DEBOUNCE_WAIT,  // Key detected, waiting for debounce
-        KEY_HELD        // Key confirmed valid
+        IDLE,
+        DEBOUNCE_WAIT,
+        KEY_HELD
     } debounce_state_t;
     
     debounce_state_t debounce_state;
@@ -166,7 +156,7 @@ module keypad_scanner (
                 
                 DEBOUNCE_WAIT: begin
                     if (key_detected && (detected_key == key_code)) begin
-                        if (debounce_counter >= 18'd60000) begin  // 20ms at 3MHz (HSOSC)
+                        if (debounce_counter >= 18'd60000) begin  // 20ms at 3MHz
                             debounce_state <= KEY_HELD;
                             key_valid <= 1'b1;
                             key_held <= 1'b1;
@@ -189,7 +179,6 @@ module keypad_scanner (
                 end
                 
                 default: begin
-                    // Invalid state - reset to IDLE
                     debounce_state <= IDLE;
                     key_valid <= 1'b0;
                     key_pressed <= 1'b0;
@@ -199,4 +188,4 @@ module keypad_scanner (
         end
     end
 
-endmodule
+endmodulel
