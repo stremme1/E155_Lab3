@@ -82,15 +82,15 @@ module keypad_scanner (
             end
             SCAN_COL1: begin
                 if (exit_scan) next_state = INITIALIZE;
-                else if (scan_counter[1:0] == 2'b00) next_state = SCAN_COL2;
+                else if (scan_counter[1:0] == 2'b01) next_state = SCAN_COL2;  // Different timing
             end
             SCAN_COL2: begin
                 if (exit_scan) next_state = INITIALIZE;
-                else if (scan_counter[1:0] == 2'b00) next_state = SCAN_COL3;
+                else if (scan_counter[1:0] == 2'b10) next_state = SCAN_COL3;  // Different timing
             end
             SCAN_COL3: begin
                 if (exit_scan) next_state = INITIALIZE;
-                else if (scan_counter[1:0] == 2'b00) next_state = SCAN_COL0;
+                else if (scan_counter[1:0] == 2'b11) next_state = SCAN_COL0;  // Different timing
             end
             INITIALIZE: next_state = VERIFY;
             VERIFY: begin

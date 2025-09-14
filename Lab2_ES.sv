@@ -1,21 +1,21 @@
- // Emmett Stralka estralka@hmc.edu
+// Emmett Stralka estralka@hmc.edu
 // 09/03/25
 // Lab2_ES: Main module implementing a dual seven-segment display system with power multiplexing
 
 module Lab2_ES (
-    input  clk,           // External clock input
-    input  reset,         // Active-low reset signal
-    input  [3:0] s0,      // First 4-bit input number
-    input  [3:0] s1,      // Second 4-bit input number
-    output [6:0] seg,     // Multiplexed seven-segment signal
-    output select0,       // Power multiplexing control for display 0 (PNP transistor)
-    output select1        // Power multiplexing control for display 1 (PNP transistor)
+    input  logic        clk,           // External clock input
+    input  logic        reset,         // Active-high reset signal (matches top-level)
+    input  logic [3:0]  s0,            // First 4-bit input number
+    input  logic [3:0]  s1,            // Second 4-bit input number
+    output logic [6:0]  seg,           // Multiplexed seven-segment signal
+    output logic        select0,       // Power multiplexing control for display 0 (PNP transistor)
+    output logic        select1        // Power multiplexing control for display 1 (PNP transistor)
 );
 
     // Internal signals
-    wire [3:0] muxed_input;            // Multiplexed input to seven-segment decoder
-    reg display_select;                // Current display selection (0 or 1)
-    reg [23:0] divcnt;                 // Clock divider counter for multiplexing
+    logic [3:0] muxed_input;            // Multiplexed input to seven-segment decoder
+    logic display_select;               // Current display selection (0 or 1)
+    logic [23:0] divcnt;                // Clock divider counter for multiplexing
 
     // 2-to-1 multiplexer for input selection to seven-segment decoder
     // Note: Using direct assignment since MUX2 is designed for 7-bit signals
@@ -33,8 +33,8 @@ module Lab2_ES (
     localparam HALF_PERIOD = 25_000;   // Half period for 3 MHz input clock (~60 Hz switching)
 
     // Clock divider for power multiplexing
-    always @(posedge clk or negedge reset) begin
-        if (!reset) begin              // Async active-low reset
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin               // Async active-high reset (matches top-level)
             divcnt <= 0;
             display_select <= 0;
         end else if (divcnt >= HALF_PERIOD - 1) begin
