@@ -41,7 +41,7 @@ module keypad_scanner (
             scan_counter <= 8'd0;
         end else begin
             scan_counter <= scan_counter + 1;
-            if (scan_counter == 8'd255) begin  // Change row every 256 clock cycles
+            if (scan_counter == 8'd99) begin  // Change row every 100 clock cycles (slower scanning)
                 row_counter <= {row_counter[2:0], row_counter[3]};
             end
         end
@@ -156,7 +156,7 @@ module keypad_scanner (
                 
                 DEBOUNCE_WAIT: begin
                     if (key_detected && (detected_key == key_code)) begin
-                        if (debounce_counter >= 18'd60000) begin  // 20ms at 3MHz
+                        if (debounce_counter >= 18'd6) begin  // ~20ms at 300Hz
                             debounce_state <= KEY_HELD;
                             key_valid <= 1'b1;
                             key_held <= 1'b1;
