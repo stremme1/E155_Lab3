@@ -33,8 +33,7 @@ module keypad_scanner (
     logic [3:0]  col_scan;
     logic [3:0]  row_hold;
     logic        exit_scan;
-    logic [15:0] scan_timer;
-    logic        scan_enable;
+    logic [15:0] scan_counter;
     
     // Double synchronizer for rows
     always_ff @(posedge clk or negedge rst_n) begin
@@ -64,19 +63,12 @@ module keypad_scanner (
         endcase
     end
     
-    // Scan timer for proper timing
+    // Scan counter for proper timing (clk is already 1kHz from top-level)
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            scan_timer <= 16'd0;
-            scan_enable <= 1'b0;
+            scan_counter <= 16'd0;
         end else begin
-            if (scan_timer >= 16'd999) begin  // 1ms at 1kHz (1000 cycles)
-                scan_timer <= 16'd0;
-                scan_enable <= 1'b1;
-            end else begin
-                scan_timer <= scan_timer + 1;
-                scan_enable <= 1'b0;
-            end
+            scan_counter <= scan_counter + 1;
         end
     end
     
@@ -86,23 +78,23 @@ module keypad_scanner (
         case (current_state)
             SCAN_COL0: begin
                 if (exit_scan) next_state = INITIALIZE;
-                else if (scan_enable) next_state = SCAN_COL1;
+                else if (scan_counter[1:0] == 2'b00) next_state = SCAN_COL1;  // Change every 4 cycles
             end
             SCAN_COL1: begin
                 if (exit_scan) next_state = INITIALIZE;
-                else if (scan_enable) next_state = SCAN_COL2;
+                else if (scan_counter[1:0] == 2'b00) next_state = SCAN_COL2;
             end
             SCAN_COL2: begin
                 if (exit_scan) next_state = INITIALIZE;
-                else if (scan_enable) next_state = SCAN_COL3;
+                else if (scan_counter[1:0] == 2'b00) next_state = SCAN_COL3;
             end
             SCAN_COL3: begin
                 if (exit_scan) next_state = INITIALIZE;
-                else if (scan_enable) next_state = SCAN_COL0;
+                else if (scan_counter[1:0] == 2'b00) next_state = SCAN_COL0;
             end
             INITIALIZE: next_state = VERIFY;
             VERIFY: begin
-                if (key_detected && (debounce_counter >= 18'd6)) next_state = HOLD;
+                if (key_detected && (debounce_counter >= 18'd5)) next_state = HOLD;  // 5ms debounce
                 else if (!key_detected) next_state = SCAN_COL0;
             end
             HOLD: begin
@@ -134,7 +126,7 @@ module keypad_scanner (
             case (current_state)
                 VERIFY: begin
                     if (key_detected) begin
-                        if (debounce_counter >= 18'd6) begin  // ~20ms at 300Hz
+                        if (debounce_counter >= 18'd5) begin  // 5ms at 1kHz
                             key_valid <= 1'b1;
                             key_held <= 1'b1;
                             debounce_counter <= 18'd0;
