@@ -1,52 +1,70 @@
 // Emmett Stralka estralka@hmc.edu
-// 09/03/25
-// Lab2_ES: Main module implementing a dual seven-segment display system with power multiplexing
+// 09/09/25
+// Lab3 Top Module
 
-module Lab2_ES (
-    input  logic        clk,           // External clock input
-    input  logic        reset,         // Active-high reset signal (matches top-level)
-    input  logic [3:0]  s0,            // First 4-bit input number
-    input  logic [3:0]  s1,            // Second 4-bit input number
-    output logic [6:0]  seg,           // Multiplexed seven-segment signal
-    output logic        select0,       // Power multiplexing control for display 0 (PNP transistor)
-    output logic        select1        // Power multiplexing control for display 1 (PNP transistor)
+module lab3_top (
+    input  logic        reset,
+    output logic [3:0]  keypad_cols,    // FPGA drives columns (output)
+    input  logic [3:0]  keypad_rows,    // FPGA reads rows (input)
+    output logic [6:0]  seg,
+    output logic        select0,
+    output logic        select1
 );
 
-    // Internal signals
-    logic [3:0] muxed_input;            // Multiplexed input to seven-segment decoder
-    logic display_select;               // Current display selection (0 or 1)
-    logic [23:0] divcnt;                // Clock divider counter for multiplexing
+    logic        clk, clk_div;
+    logic [3:0]  key_code;
+    logic        key_valid;
+    logic [3:0]  digit_left, digit_right;
+    logic [15:0] clk_counter;
 
-    // 2-to-1 multiplexer for input selection to seven-segment decoder
-    // Note: Using direct assignment since MUX2 is designed for 7-bit signals
-    assign muxed_input = display_select ? s1 : s0;
-
-    // Single seven-segment display decoder (Lab requirement: only ONE instance)
-    seven_segment seven_seg_decoder (
-        .num(muxed_input),             // Input: multiplexed 4-bit number
-        .seg(seg)                      // Output: 7-segment pattern
-    );
-
-
-    // --- Power Multiplexing at ~60 Hz ---
-    // This controls which display is powered on to create the illusion of both being on
-    localparam HALF_PERIOD = 25_000;   // Half period for 3 MHz input clock (~60 Hz switching)
-
-    // Clock divider for power multiplexing
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin               // Async active-high reset (matches top-level)
-            divcnt <= 0;
-            display_select <= 0;
-        end else if (divcnt >= HALF_PERIOD - 1) begin
-            divcnt <= 0;
-            display_select <= ~display_select; // Toggle between displays
+    // Internal oscillator
+    HSOSC #(.CLKHF_DIV(2'b11)) 
+          hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
+    
+    // Clock divider for better timing
+    always_ff @(posedge clk or negedge reset) begin
+        if (!reset) begin
+            clk_counter <= 16'd0;
+            clk_div <= 1'b0;
         end else begin
-            divcnt <= divcnt + 1;      // Increment counter
+            clk_counter <= clk_counter + 1;
+            if (clk_counter == 16'd2999) begin  // Divide by 3000 for ~1kHz from 3MHz
+                clk_counter <= 16'd0;
+                clk_div <= ~clk_div;
+            end
         end
     end
 
-    // Power multiplexing control for PNP transistors
-    assign select0 = ~display_select;  // Controls PNP for Display 0 (shows s0) - inverted for PNP
-    assign select1 = display_select;   // Controls PNP for Display 1 (shows s1) - inverted for PNP
+    // Keypad scanner (use divided clock for better debouncing)
+    keypad_scanner scanner (
+        .clk(clk_div),
+        .rst_n(reset),
+        .keypad_cols(keypad_cols),    // FPGA drives columns
+        .keypad_rows(keypad_rows),    // FPGA reads rows
+        .key_code(key_code),
+        .key_pressed(),
+        .key_valid(key_valid)
+    );
+    
+    // Keypad controller (use divided clock)
+    keypad_controller controller (
+        .clk(clk_div),
+        .rst_n(reset),
+        .key_code(key_code),
+        .key_valid(key_valid),
+        .digit_left(digit_left),
+        .digit_right(digit_right)
+    );
+
+    // Display system (use original clock for smooth multiplexing)
+    Lab2_ES display (
+        .clk(clk),
+        .reset(reset),
+        .s0(digit_left),
+        .s1(digit_right),
+        .seg(seg),
+        .select0(select0),
+        .select1(select1)
+    );
 
 endmodule
