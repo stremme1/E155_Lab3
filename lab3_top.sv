@@ -1,54 +1,41 @@
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
-// Lab3 Top Module
+// Lab3 Top Module - Keypad Scanner with Display System
 
 module lab3_top (
-    input  logic        reset,
-    output logic [3:0]  keypad_cols,    // FPGA drives columns (output)
-    input  logic [3:0]  keypad_rows,    // FPGA reads rows (input)
-    output logic [6:0]  seg,
-    output logic        select0,
-    output logic        select1
+    input  logic        reset,         // Active-low reset signal
+    output logic [3:0]  keypad_rows,   // Keypad row outputs (FPGA drives)
+    input  logic [3:0]  keypad_cols,   // Keypad column inputs (FPGA reads)
+    output logic [6:0]  seg,           // Seven-segment display signals
+    output logic        select0,       // Display 0 power control
+    output logic        select1        // Display 1 power control
 );
 
-    logic        clk, clk_div;
-    logic [3:0]  key_code;
-    logic        key_valid;
-    logic [3:0]  digit_left, digit_right;
-    logic [15:0] clk_counter;
+    // Internal signals
+    logic        clk;                  // Internal clock from HSOSC
+    logic [3:0]  key_code;             // Key code from scanner
+    logic        key_valid;            // Valid key press signal
+    logic [3:0]  digit_left;           // Left display digit
+    logic [3:0]  digit_right;          // Right display digit
 
-    // Internal oscillator
+    // Internal high-speed oscillator with slower division for keypad scanning
     HSOSC #(.CLKHF_DIV(2'b11)) 
           hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
-    
-    // Clock divider for better timing
-    always_ff @(posedge clk or negedge reset) begin
-        if (!reset) begin
-            clk_counter <= 16'd0;
-            clk_div <= 1'b0;
-        end else begin
-            clk_counter <= clk_counter + 1;
-            if (clk_counter == 16'd2999) begin  // Divide by 3000 for ~1kHz from 3MHz
-                clk_counter <= 16'd0;
-                clk_div <= ~clk_div;
-            end
-        end
-    end
 
-    // Keypad scanner (use divided clock for better debouncing)
-    keypad_scanner scanner (
-        .clk(clk_div),
+    // Keypad scanner
+    keypad_scanner scanner_inst (
+        .clk(clk),
         .rst_n(reset),
-        .keypad_cols(keypad_cols),    // FPGA drives columns
-        .keypad_rows(keypad_rows),    // FPGA reads rows
+        .keypad_rows(keypad_rows),
+        .keypad_cols(keypad_cols),
         .key_code(key_code),
         .key_pressed(),
         .key_valid(key_valid)
     );
     
-    // Keypad controller (use divided clock)
-    keypad_controller controller (
-        .clk(clk_div),
+    // Keypad controller
+    keypad_controller controller_inst (
+        .clk(clk),
         .rst_n(reset),
         .key_code(key_code),
         .key_valid(key_valid),
@@ -56,15 +43,16 @@ module lab3_top (
         .digit_right(digit_right)
     );
 
-    // Display system (use original clock for smooth multiplexing)
-    Lab2_ES display (
+    // Use existing Lab2_ES display system (single seven_segment instance)
+    Lab2_ES display_system (
         .clk(clk),
         .reset(reset),
-        .s0(digit_left),
-        .s1(digit_right),
-        .seg(seg),
-        .select0(select0),
-        .select1(select1)
+        .s0(digit_left),               // Left digit from keypad
+        .s1(digit_right),              // Right digit from keypad
+        .seg(seg),                     // Seven-segment output
+        .select0(select0),             // Display 0 power control
+        .select1(select1)              // Display 1 power control
     );
+
 
 endmodule
