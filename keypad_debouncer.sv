@@ -35,12 +35,16 @@ module keypad_debouncer (
             if (state == IDLE && next_state == DEBOUNCE && key_pressed && row_idx != 4'b0000 && col_idx != 4'b0000) begin
                 cand_row <= row_idx;
                 cand_col <= col_idx;
+            end else if (state == DEBOUNCE && next_state == IDLE) begin
+                // Reset candidates when aborting debounce
+                cand_row <= 4'b0000;
+                cand_col <= 4'b0000;
             end
 
             // count only while actively debouncing
             if (state == DEBOUNCE && key_pressed) begin
                 if (debounce_cnt < DEBOUNCE_MAX) debounce_cnt <= debounce_cnt + 1;
-            end else begin
+            end else if (state != DEBOUNCE) begin
                 debounce_cnt <= 16'd0;
             end
 
