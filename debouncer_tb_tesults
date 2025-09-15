@@ -1,4 +1,5 @@
-Time 2000000: System initialized
+# === Keypad Debouncer Testbench ===
+# Time 2000000: System initialized
 #   Initial: KeyPressed=0, RowIdx=0000, ColIdx=0000, KeyValid=0, KeyRow=0000, KeyCol=0000
 # 
 # Test 1: Valid key press - key '1' (row 0, col 0)
@@ -34,4 +35,3 @@ Time 2000000: System initialized
 # === Keypad Debouncer Testbench Complete ===
 # ** Note: $finish    : C:/Users/estralka/Desktop/E155_Lab3-main/tb_keypad_debouncer.sv(238)
 #    Time: 2200544010 ps  Iteration: 1  Instance: /tb_keypad_debouncer
-# 1
