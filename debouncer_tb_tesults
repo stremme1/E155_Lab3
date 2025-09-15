@@ -1,0 +1,37 @@
+Time 2000000: System initialized
+#   Initial: KeyPressed=0, RowIdx=0000, ColIdx=0000, KeyValid=0, KeyRow=0000, KeyCol=0000
+# 
+# Test 1: Valid key press - key '1' (row 0, col 0)
+# Time 2000000: Key '1' pressed - KeyPressed=1, RowIdx=0001, ColIdx=0001
+# Time 335173000: After 100ms - KeyPressed=1, KeyValid=0, KeyRow=0000, KeyCol=0000
+# Time 668513000: After 200ms total - KeyPressed=1, KeyValid=0, KeyRow=0000, KeyCol=0000
+# Time 668513000: Key '1' released
+# Time 835183000: After release - KeyPressed=0, KeyValid=0, KeyRow=0000, KeyCol=0000
+# 
+# Test 2: Valid key press - key '2' (row 0, col 1)
+# Time 935183000: Key '2' pressed - KeyPressed=1, RowIdx=0001, ColIdx=0010
+# Time 1268192000: After 100ms - KeyPressed=1, KeyValid=0, KeyRow=0000, KeyCol=0000
+# Time 1268192000: Key '2' released
+# Time 1434862000: After release - KeyPressed=0, KeyValid=0, KeyRow=0000, KeyCol=0000
+# 
+# Test 3: Invalid key press (row/col = 0)
+# Time 1534862000: Invalid key pressed - KeyPressed=1, RowIdx=0000, ColIdx=0000
+# Time 1701201000: After 50ms - KeyPressed=1, KeyValid=0, KeyRow=0000, KeyCol=0000
+# Time 1701201000: Invalid key released
+# 
+# Test 4: Key press with changing row/col (should abort)
+# Time 1801201000: Key '1' pressed - KeyPressed=1, RowIdx=0001, ColIdx=0001
+# Time 1834203000: Key changed to '5' - KeyPressed=1, RowIdx=0010, ColIdx=0010
+# Time 2000873000: After 50ms - KeyPressed=1, KeyValid=0, KeyRow=0000, KeyCol=0000
+# Time 2000873000: Key released
+# 
+# Test 5: Short key press (should not debounce)
+# Time 2100873000: Short key press - KeyPressed=1, RowIdx=0001, ColIdx=0001
+# Time 2133876000: After 10ms - KeyPressed=1, KeyValid=0, KeyRow=0000, KeyCol=0000
+# Time 2133876000: Short key released
+# Time 2200544000: After release - KeyPressed=0, KeyValid=0, KeyRow=0000, KeyCol=0000
+# 
+# === Keypad Debouncer Testbench Complete ===
+# ** Note: $finish    : C:/Users/estralka/Desktop/E155_Lab3-main/tb_keypad_debouncer.sv(238)
+#    Time: 2200544010 ps  Iteration: 1  Instance: /tb_keypad_debouncer
+# 1
