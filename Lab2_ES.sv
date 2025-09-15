@@ -1,52 +1,50 @@
 // Emmett Stralka estralka@hmc.edu
-// 09/03/25
-// Lab2_ES: Main module implementing a dual seven-segment display system with power multiplexing
+// 09/09/25
+// Lab2_ES - Seven Segment Display System
+// This module implements a dual seven-segment display system with multiplexing
 
 module Lab2_ES (
-    input  logic        clk,           // External clock input
-    input  logic        reset,         // Active-high reset signal (matches top-level)
-    input  logic [3:0]  s0,            // First 4-bit input number
-    input  logic [3:0]  s1,            // Second 4-bit input number
-    output logic [6:0]  seg,           // Multiplexed seven-segment signal
-    output logic        select0,       // Power multiplexing control for display 0 (PNP transistor)
-    output logic        select1        // Power multiplexing control for display 1 (PNP transistor)
+    input  logic        clk,           // System clock
+    input  logic        reset,         // Active-high reset
+    input  logic [3:0]  s0,            // Left digit (most significant)
+    input  logic [3:0]  s1,            // Right digit (least significant)
+    output logic [6:0]  seg,           // Seven-segment output
+    output logic        select0,       // Display 0 power control
+    output logic        select1        // Display 1 power control
 );
 
     // Internal signals
-    logic [3:0] muxed_input;            // Multiplexed input to seven-segment decoder
-    logic display_select;               // Current display selection (0 or 1)
-    logic [23:0] divcnt;                // Clock divider counter for multiplexing
-
-    // 2-to-1 multiplexer for input selection to seven-segment decoder
-    // Note: Using direct assignment since MUX2 is designed for 7-bit signals
-    assign muxed_input = display_select ? s1 : s0;
-
-    // Single seven-segment display decoder (Lab requirement: only ONE instance)
-    seven_segment seven_seg_decoder (
-        .num(muxed_input),             // Input: multiplexed 4-bit number
-        .seg(seg)                      // Output: 7-segment pattern
-    );
-
-
-    // --- Power Multiplexing at ~60 Hz ---
-    // This controls which display is powered on to create the illusion of both being on
-    localparam HALF_PERIOD = 25_000;   // Half period for 3 MHz input clock (~60 Hz switching)
-
-    // Clock divider for power multiplexing
+    logic [3:0] digit_to_display;
+    logic [6:0] seg_out;
+    
+    // Multiplexing counter for display switching
+    logic [15:0] mux_counter;
+    logic mux_select;
+    
+    // Multiplexing counter
     always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin               // Async active-high reset (matches top-level)
-            divcnt <= 0;
-            display_select <= 0;
-        end else if (divcnt >= HALF_PERIOD - 1) begin
-            divcnt <= 0;
-            display_select <= ~display_select; // Toggle between displays
+        if (reset) begin
+            mux_counter <= 16'd0;
         end else begin
-            divcnt <= divcnt + 1;      // Increment counter
+            mux_counter <= mux_counter + 1;
         end
     end
-
-    // Power multiplexing control for PNP transistors
-    assign select0 = ~display_select;  // Controls PNP for Display 0 (shows s0) - inverted for PNP
-    assign select1 = display_select;   // Controls PNP for Display 1 (shows s1) - inverted for PNP
+    
+    // Use bit 12 of counter for multiplexing (switches every ~1.3ms @ 3MHz)
+    assign mux_select = mux_counter[12];
+    
+    // Multiplex the digit inputs
+    assign digit_to_display = mux_select ? s1 : s0;
+    
+    // Seven-segment decoder
+    seven_segment seg_decoder (
+        .num(digit_to_display),
+        .seg(seg_out)
+    );
+    
+    // Output assignments
+    assign seg = seg_out;
+    assign select0 = ~mux_select;  // Active low
+    assign select1 = mux_select;   // Active low
 
 endmodule

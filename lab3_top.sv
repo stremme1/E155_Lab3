@@ -13,24 +13,51 @@ module lab3_top (
 
     // Internal signals
     logic        clk;                  // Internal clock from HSOSC
-    logic [3:0]  key_code;             // Key code from scanner
-    logic        key_valid;            // Valid key press signal
+    logic [3:0]  row_idx;              // Row index from scanner
+    logic [3:0]  col_idx;              // Column index from scanner
+    logic        key_pressed;          // Raw key press signal
+    logic        key_valid;            // Debounced valid key press signal
+    logic [3:0]  key_row;              // Debounced row from debouncer
+    logic [3:0]  key_col;              // Debounced column from debouncer
+    logic [3:0]  key_code;             // Decoded key code
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
 
-    // Internal high-speed oscillator with proper division for 3MHz system clock
-    // CLKHF_DIV = 2'b10 gives 3MHz from 12MHz internal oscillator
-    HSOSC #(.CLKHF_DIV(2'b10)) 
-          hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
+    // Clock generation - use HSOSC for synthesis, clock_gen for simulation
+    // For synthesis: HSOSC #(.CLKHF_DIV(2'b10)) hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
+    // For simulation: clock_gen sim_clk (.clk(clk));
+    
+    // Use HSOSC for synthesis (physical hardware)
+    HSOSC #(.CLKHF_DIV(2'b10)) hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
 
     // Keypad scanner
     keypad_scanner scanner_inst (
         .clk(clk),
         .rst_n(reset),
-        .keypad_rows(keypad_rows),
-        .keypad_cols(keypad_cols),
-        .key_code(key_code),
-        .key_valid(key_valid)
+        .row(keypad_rows),
+        .col(keypad_cols),
+        .row_idx(row_idx),
+        .col_idx(col_idx),
+        .key_pressed(key_pressed)
+    );
+    
+    // Keypad debouncer
+    keypad_debouncer debouncer_inst (
+        .clk(clk),
+        .rst_n(reset),
+        .key_pressed(key_pressed),
+        .row_idx(row_idx),
+        .col_idx(col_idx),
+        .key_valid(key_valid),
+        .key_row(key_row),
+        .key_col(key_col)
+    );
+    
+    // Keypad decoder - converts row/col to key code
+    keypad_decoder decoder_inst (
+        .row_onehot(key_row),
+        .col_onehot(key_col),
+        .key_code(key_code)
     );
     
     // Keypad controller
