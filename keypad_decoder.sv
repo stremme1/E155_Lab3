@@ -1,3 +1,8 @@
+// Emmett Stralka estralka@hmc.edu
+// 09/09/25
+// Lab3 Keypad Decoder
+// Converts row/column one-hot signals to 4-bit key codes
+
 module keypad_decoder (
     input  logic [3:0] row_onehot,
     input  logic [3:0] col_onehot,
@@ -12,25 +17,25 @@ module keypad_decoder (
             {4'b0001, 4'b0001}: key_code = 4'b0001; // 1
             {4'b0001, 4'b0010}: key_code = 4'b0010; // 2
             {4'b0001, 4'b0100}: key_code = 4'b0011; // 3
-            {4'b0001, 4'b1000}: key_code = 4'b1100; // C
+            {4'b0001, 4'b1000}: key_code = 4'b1010; // A
 
             // row1 (0010)
             {4'b0010, 4'b0001}: key_code = 4'b0100; // 4
             {4'b0010, 4'b0010}: key_code = 4'b0101; // 5
             {4'b0010, 4'b0100}: key_code = 4'b0110; // 6
-            {4'b0010, 4'b1000}: key_code = 4'b1101; // D
+            {4'b0010, 4'b1000}: key_code = 4'b1011; // B
 
             // row2 (0100)
             {4'b0100, 4'b0001}: key_code = 4'b0111; // 7
             {4'b0100, 4'b0010}: key_code = 4'b1000; // 8
             {4'b0100, 4'b0100}: key_code = 4'b1001; // 9
-            {4'b0100, 4'b1000}: key_code = 4'b1110; // E
+            {4'b0100, 4'b1000}: key_code = 4'b1100; // C
 
             // row3 (1000)
-            {4'b1000, 4'b0001}: key_code = 4'b1010; // A
+            {4'b1000, 4'b0001}: key_code = 4'b1110; // E
             {4'b1000, 4'b0010}: key_code = 4'b0000; // 0
-            {4'b1000, 4'b0100}: key_code = 4'b1011; // B
-            {4'b1000, 4'b1000}: key_code = 4'b1111; // F
+            {4'b1000, 4'b0100}: key_code = 4'b1111; // F
+            {4'b1000, 4'b1000}: key_code = 4'b1101; // D
 
             default: key_code = 4'b0000;
         endcase
