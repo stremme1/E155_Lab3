@@ -31,8 +31,8 @@ module keypad_debouncer (
         end else begin
             state <= next_state;
 
-            // When first seeing a press, latch candidate row/col (only if valid)
-            if (state == IDLE && key_pressed && row_idx != 4'b0000 && col_idx != 4'b0000) begin
+            // Latch candidate values when entering DEBOUNCE state
+            if (state == IDLE && next_state == DEBOUNCE && key_pressed && row_idx != 4'b0000 && col_idx != 4'b0000) begin
                 cand_row <= row_idx;
                 cand_col <= col_idx;
             end
