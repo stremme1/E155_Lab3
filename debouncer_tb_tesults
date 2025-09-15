@@ -21,7 +21,7 @@
 # Test 3: Invalid key press (row/col = 0)
 # Time 1535529000: Invalid key pressed - KeyPressed=1, RowIdx=0000, ColIdx=0000
 # Time 1535531000: After 1 clock - State: IDLE (00), NextState: DEBOUNCE (01), DebounceCnt: 0, CandRow: 0001, CandCol: 0010
-# Time 1702201000: After 50ms - KeyPressed=1, KeyValid=0, KeyRow=0000, KeyCol=0000, State: IDLE, DebounceCnt: 0
+# Time 1702201000: After 50ms - KeyPressed=1, KeyValid=0, KeyRow=0000, KeyCol=0000, State: IDLE, DebounceCnt: 1
 # Time 1702201000: Invalid key released
 # 
 # Test 4: Key press with changing row/col (should abort)
@@ -40,5 +40,3 @@
 # ** Note: $finish    : C:/Users/estralka/Desktop/E155_Lab3-main/tb_keypad_debouncer.sv(270)
 #    Time: 2201544030 ps  Iteration: 1  Instance: /tb_keypad_debouncer
 # 1
-# Break at C:/Users/estralka/Desktop/E155_Lab3-main/tb_keypad_debouncer.sv line 270
-
