@@ -48,6 +48,8 @@ module tb_keypad_debouncer;
         $display("Time %0t: System initialized", $time);
         $display("  Initial: KeyPressed=%b, RowIdx=%b, ColIdx=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
                  key_pressed, row_idx, col_idx, key_valid, key_row, key_col);
+        $display("  Initial State: %s, NextState: %s, DebounceCnt: %0d, CandRow: %b, CandCol: %b", 
+                 dut.state.name(), dut.next_state.name(), dut.debounce_cnt, dut.cand_row, dut.cand_col);
         
         // Test 1: Valid key press - key '1' (row 0, col 0)
         $display("\nTest 1: Valid key press - key '1' (row 0, col 0)");
@@ -57,29 +59,34 @@ module tb_keypad_debouncer;
         $display("Time %0t: Key '1' pressed - KeyPressed=%b, RowIdx=%b, ColIdx=%b", 
                  $time, key_pressed, row_idx, col_idx);
         
+        // Wait for state transition and check internal state
+        @(posedge clk);
+        $display("Time %0t: After 1 clock - State: %s, NextState: %s, DebounceCnt: %0d, CandRow: %b, CandCol: %b", 
+                 $time, dut.state.name(), dut.next_state.name(), dut.debounce_cnt, dut.cand_row, dut.cand_col);
+        
         // Monitor debouncing process
         repeat(1000) begin
             @(posedge clk);
             if ($time % 100000 == 0) begin // Print every 100us
-                $display("Time %0t: KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
-                         $time, key_pressed, key_valid, key_row, key_col);
+                $display("Time %0t: KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b, State: %s, DebounceCnt: %0d", 
+                         $time, key_pressed, key_valid, key_row, key_col, dut.state.name(), dut.debounce_cnt);
             end
         end
         
-        $display("Time %0t: After 100ms - KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
-                 $time, key_pressed, key_valid, key_row, key_col);
+        $display("Time %0t: After 100ms - KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b, State: %s, DebounceCnt: %0d", 
+                 $time, key_pressed, key_valid, key_row, key_col, dut.state.name(), dut.debounce_cnt);
         
         // Hold key for another 100ms
         repeat(1000) begin
             @(posedge clk);
             if ($time % 100000 == 0) begin // Print every 100us
-                $display("Time %0t: KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
-                         $time, key_pressed, key_valid, key_row, key_col);
+                $display("Time %0t: KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b, State: %s, DebounceCnt: %0d", 
+                         $time, key_pressed, key_valid, key_row, key_col, dut.state.name(), dut.debounce_cnt);
             end
         end
         
-        $display("Time %0t: After 200ms total - KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
-                 $time, key_pressed, key_valid, key_row, key_col);
+        $display("Time %0t: After 200ms total - KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b, State: %s, DebounceCnt: %0d", 
+                 $time, key_pressed, key_valid, key_row, key_col, dut.state.name(), dut.debounce_cnt);
         
         // Release key
         key_pressed = 0;
@@ -107,17 +114,22 @@ module tb_keypad_debouncer;
         $display("Time %0t: Key '2' pressed - KeyPressed=%b, RowIdx=%b, ColIdx=%b", 
                  $time, key_pressed, row_idx, col_idx);
         
+        // Wait for state transition and check internal state
+        @(posedge clk);
+        $display("Time %0t: After 1 clock - State: %s, NextState: %s, DebounceCnt: %0d, CandRow: %b, CandCol: %b", 
+                 $time, dut.state.name(), dut.next_state.name(), dut.debounce_cnt, dut.cand_row, dut.cand_col);
+        
         // Monitor debouncing process
         repeat(1000) begin
             @(posedge clk);
             if ($time % 100000 == 0) begin // Print every 100us
-                $display("Time %0t: KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
-                         $time, key_pressed, key_valid, key_row, key_col);
+                $display("Time %0t: KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b, State: %s, DebounceCnt: %0d", 
+                         $time, key_pressed, key_valid, key_row, key_col, dut.state.name(), dut.debounce_cnt);
             end
         end
         
-        $display("Time %0t: After 100ms - KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
-                 $time, key_pressed, key_valid, key_row, key_col);
+        $display("Time %0t: After 100ms - KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b, State: %s, DebounceCnt: %0d", 
+                 $time, key_pressed, key_valid, key_row, key_col, dut.state.name(), dut.debounce_cnt);
         
         // Release key
         key_pressed = 0;
@@ -145,17 +157,22 @@ module tb_keypad_debouncer;
         $display("Time %0t: Invalid key pressed - KeyPressed=%b, RowIdx=%b, ColIdx=%b", 
                  $time, key_pressed, row_idx, col_idx);
         
+        // Wait for state transition and check internal state
+        @(posedge clk);
+        $display("Time %0t: After 1 clock - State: %s, NextState: %s, DebounceCnt: %0d, CandRow: %b, CandCol: %b", 
+                 $time, dut.state.name(), dut.next_state.name(), dut.debounce_cnt, dut.cand_row, dut.cand_col);
+        
         // Monitor for 50ms
         repeat(500) begin
             @(posedge clk);
             if ($time % 100000 == 0) begin // Print every 100us
-                $display("Time %0t: KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
-                         $time, key_pressed, key_valid, key_row, key_col);
+                $display("Time %0t: KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b, State: %s, DebounceCnt: %0d", 
+                         $time, key_pressed, key_valid, key_row, key_col, dut.state.name(), dut.debounce_cnt);
             end
         end
         
-        $display("Time %0t: After 50ms - KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b", 
-                 $time, key_pressed, key_valid, key_row, key_col);
+        $display("Time %0t: After 50ms - KeyPressed=%b, KeyValid=%b, KeyRow=%b, KeyCol=%b, State: %s, DebounceCnt: %0d", 
+                 $time, key_pressed, key_valid, key_row, key_col, dut.state.name(), dut.debounce_cnt);
         
         // Release key
         key_pressed = 0;
