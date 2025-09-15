@@ -37,8 +37,8 @@ module keypad_debouncer (
                 cand_col <= col_idx;
             end
 
-            // count only while actively debouncing the same candidate
-            if (state == DEBOUNCE && key_pressed && row_idx == cand_row && col_idx == cand_col) begin
+            // count only while actively debouncing
+            if (state == DEBOUNCE && key_pressed) begin
                 if (debounce_cnt < DEBOUNCE_MAX) debounce_cnt <= debounce_cnt + 1;
             end else begin
                 debounce_cnt <= 16'd0;
@@ -61,8 +61,8 @@ module keypad_debouncer (
         case (state)
             IDLE:      if (key_pressed) next_state = DEBOUNCE;
             DEBOUNCE:  begin
-                // require the candidate to remain present; if it disappears or changes -> abort
-                if (!key_pressed || row_idx != cand_row || col_idx != cand_col)
+                // if key is released or invalid, abort
+                if (!key_pressed || row_idx == 4'b0000 || col_idx == 4'b0000)
                     next_state = IDLE;
                 else if (debounce_cnt >= DEBOUNCE_MAX)
                     next_state = HOLD;
