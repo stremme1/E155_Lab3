@@ -9,72 +9,55 @@ module keypad_debouncer (
     output logic [3:0]  key_col
 );
 
-    typedef enum logic [1:0] { IDLE, DEBOUNCE, HOLD, RELEASE } state_t;
-    state_t state, next_state;
-
+    // Simple counter-based debouncer
     logic [15:0] debounce_cnt;
-    localparam int DEBOUNCE_MAX = 16'd60000; // ~20ms @ 3MHz, good for physical hardware
+    logic [3:0]  latched_row, latched_col;
+    logic        key_stable;
+    
+    localparam int DEBOUNCE_MAX = 16'd60000; // ~20ms @ 3MHz
 
-    // candidate latch
-    logic [3:0] cand_row, cand_col;
-
-    // state register + counter
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            state <= IDLE;
             debounce_cnt <= 16'd0;
-            cand_row <= 4'b0000;
-            cand_col <= 4'b0000;
+            latched_row <= 4'b0000;
+            latched_col <= 4'b0000;
+            key_stable <= 1'b0;
             key_valid <= 1'b0;
             key_row <= 4'b0000;
             key_col <= 4'b0000;
         end else begin
-            state <= next_state;
-
-            // Latch candidate values when key is first pressed in IDLE state
-            if (state == IDLE && key_pressed && row_idx != 4'b0000 && col_idx != 4'b0000) begin
-                cand_row <= row_idx;
-                cand_col <= col_idx;
-            end else if (state == DEBOUNCE && next_state == IDLE) begin
-                // Reset candidates when aborting debounce
-                cand_row <= 4'b0000;
-                cand_col <= 4'b0000;
-            end
-
-            // count only while actively debouncing
-            if (state == DEBOUNCE && key_pressed) begin
-                debounce_cnt <= debounce_cnt + 1;
+            // If key is pressed and valid
+            if (key_pressed && row_idx != 4'b0000 && col_idx != 4'b0000) begin
+                // If this is a new key press, reset counter and latch new values
+                if (row_idx != latched_row || col_idx != latched_col) begin
+                    debounce_cnt <= 16'd0;
+                    latched_row <= row_idx;
+                    latched_col <= col_idx;
+                    key_stable <= 1'b0;
+                    key_valid <= 1'b0;
+                end else begin
+                    // Same key, increment counter
+                    if (debounce_cnt < DEBOUNCE_MAX) begin
+                        debounce_cnt <= debounce_cnt + 1;
+                    end else begin
+                        // Debounce complete
+                        key_stable <= 1'b1;
+                        key_valid <= 1'b1;
+                        key_row <= latched_row;
+                        key_col <= latched_col;
+                    end
+                end
             end else begin
+                // No key pressed, reset everything
                 debounce_cnt <= 16'd0;
-            end
-
-            // In HOLD, keep key outputs latched from candidate
-            if (state == HOLD) begin
-                key_valid <= 1'b1;
-                key_row   <= cand_row;
-                key_col   <= cand_col;
-            end else begin
+                latched_row <= 4'b0000;
+                latched_col <= 4'b0000;
+                key_stable <= 1'b0;
                 key_valid <= 1'b0;
+                key_row <= 4'b0000;
+                key_col <= 4'b0000;
             end
         end
     end
 
-    // next-state logic: require continuity of candidate while debouncing
-    always_comb begin
-        next_state = state;
-        case (state)
-            IDLE:      if (key_pressed) next_state = DEBOUNCE;
-            DEBOUNCE:  begin
-                // if key is released or invalid, abort
-                if (!key_pressed || row_idx == 4'b0000 || col_idx == 4'b0000)
-                    next_state = IDLE;
-                else if (debounce_cnt >= DEBOUNCE_MAX)
-                    next_state = HOLD;
-                else
-                    next_state = DEBOUNCE; // Stay in DEBOUNCE while counting
-            end
-            HOLD:      if (!key_pressed) next_state = RELEASE;
-            RELEASE:   if (!key_pressed) next_state = IDLE; // optional: add release debounce if desired
-        endcase
-    end
 endmodule
