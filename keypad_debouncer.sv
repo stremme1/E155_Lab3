@@ -19,7 +19,7 @@ module keypad_debouncer (
     logic [3:0]  key_row_int;
     logic [3:0]  key_col_int;
     
-    localparam int DEBOUNCE_MAX = 16'd60000; // ~20ms @ 3MHz
+    localparam int DEBOUNCE_MAX = 16'd59999; // ~20ms @ 3MHz (59999 cycles for proper completion)
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -42,7 +42,7 @@ module keypad_debouncer (
                     key_valid_int <= 1'b0;
                 end else begin
                     // Same key, increment counter
-                    if (debounce_cnt < DEBOUNCE_MAX) begin
+                    if (debounce_cnt < DEBOUNCE_MAX - 1) begin
                         debounce_cnt <= debounce_cnt + 1;
                     end else begin
                         // Debounce complete

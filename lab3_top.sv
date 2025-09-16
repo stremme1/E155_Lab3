@@ -34,6 +34,7 @@ module lab3_top (
     keypad_scanner scanner_inst (
         .clk(clk),
         .rst_n(reset),
+        .key_valid(key_valid),    // Connect debouncer output to scanner
         .row(keypad_rows),
         .col(keypad_cols),
         .row_idx(row_idx),
