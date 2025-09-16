@@ -14,8 +14,8 @@ module lab3_top (
     // Internal signals
     logic        clk;                  // Internal clock from HSOSC
     logic [3:0]  row_idx;              // Row index from scanner
-    logic [3:0]  col_idx;              // Column index from scanner
-    logic        key_pressed;          // Raw key press signal
+    logic [3:0]  col_sync;             // Synchronized column data from scanner
+    logic        key_detected;         // Key detection signal from scanner
     logic        key_valid;            // Debounced valid key press signal
     logic [3:0]  key_row;              // Debounced row from debouncer
     logic [3:0]  key_col;              // Debounced column from debouncer
@@ -35,21 +35,20 @@ module lab3_top (
     keypad_scanner scanner_inst (
         .clk(clk),
         .rst_n(reset),
-        .key_valid(key_valid),    // Connect debouncer output to scanner
         .row(keypad_rows),
         .col(keypad_cols),
         .row_idx(row_idx),
-        .col_idx(col_idx),
-        .key_pressed(key_pressed)
+        .col_sync(col_sync),
+        .key_detected(key_detected)
     );
     
     // Keypad debouncer
     keypad_debouncer debouncer_inst (
         .clk(clk),
         .rst_n(reset),
-        .key_pressed(key_pressed),
+        .key_detected(key_detected),
         .row_idx(row_idx),
-        .col_idx(col_idx),
+        .col_sync(col_sync),
         .key_valid(key_valid),
         .key_row(key_row),
         .key_col(key_col)
