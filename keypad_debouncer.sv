@@ -10,7 +10,7 @@ module keypad_debouncer (
 );
 
     // Simple counter-based debouncer
-    logic [15:0] debounce_cnt;
+    logic [19:0] debounce_cnt;  // Increased to 20 bits for safety
     logic [3:0]  latched_row, latched_col;
     logic        key_stable;
     
@@ -19,11 +19,11 @@ module keypad_debouncer (
     logic [3:0]  key_row_int;
     logic [3:0]  key_col_int;
     
-    localparam int DEBOUNCE_MAX = 16'd59999; // ~20ms @ 3MHz (59999 cycles for proper completion)
+    localparam int DEBOUNCE_MAX = 20'd59999; // ~20ms @ 3MHz (59999 cycles for proper completion)
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            debounce_cnt <= 16'd0;
+            debounce_cnt <= 20'd0;
             latched_row <= 4'b0000;
             latched_col <= 4'b0000;
             key_stable <= 1'b0;
@@ -35,7 +35,7 @@ module keypad_debouncer (
             if (key_pressed && row_idx != 4'b0000 && col_idx != 4'b0000) begin
                 // If this is a new key press, reset counter and latch new values
                 if (row_idx != latched_row || col_idx != latched_col) begin
-                    debounce_cnt <= 16'd0;
+                    debounce_cnt <= 20'd0;
                     latched_row <= row_idx;
                     latched_col <= col_idx;
                     key_stable <= 1'b0;
@@ -54,7 +54,7 @@ module keypad_debouncer (
                 end
             end else begin
                 // No key pressed, reset everything
-                debounce_cnt <= 16'd0;
+                debounce_cnt <= 20'd0;
                 latched_row <= 4'b0000;
                 latched_col <= 4'b0000;
                 key_stable <= 1'b0;

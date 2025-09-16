@@ -28,7 +28,8 @@ module lab3_top (
     // For simulation: clock_gen sim_clk (.clk(clk));
     
     // Use HSOSC for synthesis (physical hardware)
-    HSOSC #(.CLKHF_DIV(2'b10)) hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
+    // CLKHF_DIV(2'b11) = divide by 16 to get 3MHz from 48MHz
+    HSOSC #(.CLKHF_DIV(2'b11)) hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
 
     // Keypad scanner
     keypad_scanner scanner_inst (

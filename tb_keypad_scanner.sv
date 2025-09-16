@@ -191,14 +191,21 @@ module tb_keypad_scanner;
         
         $display("Reset complete. Starting test...");
         
-        // Test 1: Normal scanning
-        $display("\n--- Test 1: Normal Scanning ---");
-        $display("Monitoring normal scanning behavior...");
+        // Test 1: Normal scanning - show continuous cycling
+        $display("\n--- Test 1: Continuous Scanning ---");
+        $display("Scan period is 6000 cycles, monitoring continuous row transitions...");
         
-        for (int i = 0; i < 20; i++) begin
-            @(posedge clk);
-            $display("Cycle %0d: Rows=%b, Cols=%b, Key_pressed=%b, Row_idx=%b, Col_idx=%b", 
-                     i, row, col, key_pressed, row_idx, col_idx);
+        // Show initial state
+        $display("Initial: Rows=%b, Row_idx=%b, Scan_state=%0d, Counter=%0d", 
+                 row, row_idx, dut.scan_state, dut.scan_counter);
+        
+        // Show multiple complete cycles
+        for (int cycle = 0; cycle < 3; cycle++) begin
+            for (int row_num = 0; row_num < 4; row_num++) begin
+                repeat(6000) @(posedge clk);
+                $display("Cycle %0d, Row %0d: Rows=%b, Row_idx=%b, Scan_state=%0d, Counter=%0d", 
+                         cycle, row_num, row, row_idx, dut.scan_state, dut.scan_counter);
+            end
         end
         
         // Test 2: Key press with hold logic
@@ -219,6 +226,14 @@ module tb_keypad_scanner;
                      i, key_pressed, dut.key_detected, row_idx, col_idx);
         end
         
+        // Release key first
+        col = 4'b1111;
+        $display("Key released");
+        
+        // Wait a few cycles for key_pressed to go low
+        repeat(5) @(posedge clk);
+        $display("After key release: Key_pressed=%b, Key_detected=%b", key_pressed, dut.key_detected);
+        
         // Simulate debouncing complete
         $display("Simulating debouncing complete...");
         key_valid = 1;
@@ -226,21 +241,10 @@ module tb_keypad_scanner;
         key_valid = 0;
         
         // Monitor after debouncing
-        for (int i = 0; i < 5; i++) begin
+        for (int i = 0; i < 10; i++) begin
             @(posedge clk);
-            $display("After debounce cycle %0d: Key_pressed=%b, Key_detected=%b, Row_idx=%b, Col_idx=%b", 
-                     i, key_pressed, dut.key_detected, row_idx, col_idx);
-        end
-        
-        // Release key
-        col = 4'b1111;
-        $display("Key released");
-        
-        // Monitor after release
-        for (int i = 0; i < 5; i++) begin
-            @(posedge clk);
-            $display("After release cycle %0d: Key_pressed=%b, Key_detected=%b", 
-                     i, key_pressed, dut.key_detected);
+            $display("After debounce cycle %0d: Key_pressed=%b, Key_detected=%b, Row_idx=%b, Col_idx=%b, Scan_state=%0d", 
+                     i, key_pressed, dut.key_detected, row_idx, col_idx, dut.scan_state);
         end
         
         $display("\n==========================================");

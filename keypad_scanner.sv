@@ -72,14 +72,18 @@ module keypad_scanner (
             // If debouncing is complete, resume scanning
             if (key_valid && key_detected) begin
                 key_detected <= 1'b0;
-                scan_counter <= 32'd0;
-                scan_state   <= scan_state + 1;  // Move to next row
+                // Don't reset counter or change state - let normal scanning continue
+            end
+            // If key is released and we were detecting, clear the detection
+            else if (!key_pressed && key_detected) begin
+                key_detected <= 1'b0;
+                // Don't reset counter or change state - let normal scanning continue
             end
             // Normal scanning when no key detected
             else if (!key_detected) begin
                 if (scan_counter == SCAN_PERIOD) begin
                     scan_counter <= 32'd0;
-                    scan_state   <= scan_state + 1;
+                    scan_state   <= (scan_state == 2'd3) ? 2'd0 : scan_state + 1;  // Wrap around
                 end else begin
                     scan_counter <= scan_counter + 1;
                 end
@@ -92,8 +96,9 @@ module keypad_scanner (
     // ROW DRIVING (ACTIVE-LOW)
     // ========================================================================
     // Drive one row low at a time in sequence
+    // Use held_state when key is detected to maintain the active row
     always_comb begin
-        case (scan_state)
+        case (key_detected ? held_state : scan_state)
             2'd0: row = 4'b1110;  // Row 0 active
             2'd1: row = 4'b1101;  // Row 1 active
             2'd2: row = 4'b1011;  // Row 2 active
@@ -116,8 +121,9 @@ module keypad_scanner (
     // ========================================================================
     
     // Generate one-hot row index for currently active row
+    // Use held_state when key is detected to maintain the active row
     always_comb begin
-        case (scan_state)
+        case (key_detected ? held_state : scan_state)
             2'd0: row_idx = 4'b0001;  // Row 0
             2'd1: row_idx = 4'b0010;  // Row 1
             2'd2: row_idx = 4'b0100;  // Row 2
