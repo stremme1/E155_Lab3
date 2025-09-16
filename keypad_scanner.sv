@@ -72,12 +72,16 @@ module keypad_scanner (
             // If debouncing is complete, resume scanning
             if (key_valid && key_detected) begin
                 key_detected <= 1'b0;
-                // Don't reset counter or change state - let normal scanning continue
+                scan_counter <= 32'd0;  // Reset counter to start fresh scan period
+                // Move to next row after debouncing completes
+                scan_state <= (held_state == 2'd3) ? 2'd0 : held_state + 1;
             end
             // If key is released and we were detecting, clear the detection
             else if (!key_pressed && key_detected) begin
                 key_detected <= 1'b0;
-                // Don't reset counter or change state - let normal scanning continue
+                scan_counter <= 32'd0;  // Reset counter to start fresh scan period
+                // Stay on the same row when key is released (don't advance)
+                scan_state <= held_state;
             end
             // Normal scanning when no key detected
             else if (!key_detected) begin

@@ -1,161 +1,22 @@
-// ============================================================================
-// KEYPAD SCANNER TESTBENCH
-// ============================================================================
-// Tests the keypad_scanner module functionality
-
-module keypad_scanner (
-    input  logic        clk,
-    input  logic        rst_n,        // Active-low reset
-    input  logic        key_valid,    // From debouncer - indicates debouncing complete
-    output logic [3:0]  row,          // Row outputs (active-low)
-    input  logic [3:0]  col,          // Column inputs (pull-up, async)
-    output logic [3:0]  row_idx,      // One-hot row index
-    output logic [3:0]  col_idx,      // One-hot column index
-    output logic        key_pressed   // Valid single key press detected
-);
-
-    // ========================================================================
-    // PARAMETERS AND LOCAL SIGNALS
-    // ========================================================================
-    localparam int SCAN_PERIOD = 32'd5999; // ~2ms per row @ 3MHz (fast scanning)
-    
-    // Column synchronization signals
-    logic [3:0] col_sync1, col_sync2;
-    
-    // Row scanning signals
-    logic [31:0] scan_counter;
-    logic [1:0]  scan_state;
-    logic        key_detected;    // Internal flag for key detection
-    logic [1:0]  held_state;      // State to hold when key detected
-    
-    // Key detection signals
-    logic [3:0] col_count;
-
-    // ========================================================================
-    // COLUMN INPUT SYNCHRONIZATION
-    // ========================================================================
-    // Two-stage pipeline to synchronize asynchronous column inputs
-    always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            col_sync1 <= 4'b1111;
-            col_sync2 <= 4'b1111;
-        end else begin
-            col_sync1 <= col;
-            col_sync2 <= col_sync1;
-        end
-    end
-
-    // ========================================================================
-    // ROW SCANNING STATE MACHINE WITH KEY HOLD LOGIC
-    // ========================================================================
-    // Fast counter to change active row every SCAN_PERIOD clock cycles
-    // BUT hold the state when a key is detected until debouncing completes
-    always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            scan_counter <= 32'd0;
-            scan_state   <= 2'd0;
-            key_detected <= 1'b0;
-            held_state   <= 2'd0;
-        end else begin
-            // Check if a key is pressed (and we haven't already detected one)
-            if (key_pressed && !key_detected) begin
-                key_detected <= 1'b1;
-                held_state   <= scan_state;  // Hold current state
-            end
-            
-            // If debouncing is complete, resume scanning
-            if (key_valid && key_detected) begin
-                key_detected <= 1'b0;
-                scan_counter <= 32'd0;
-                scan_state   <= scan_state + 1;  // Move to next row
-            end
-            // Normal scanning when no key detected
-            else if (!key_detected) begin
-                if (scan_counter == SCAN_PERIOD) begin
-                    scan_counter <= 32'd0;
-                    scan_state   <= scan_state + 1;
-                end else begin
-                    scan_counter <= scan_counter + 1;
-                end
-            end
-            // When key detected, hold the state (don't increment counter or state)
-        end
-    end
-
-    // ========================================================================
-    // ROW DRIVING (ACTIVE-LOW)
-    // ========================================================================
-    // Drive one row low at a time in sequence
-    always_comb begin
-        case (scan_state)
-            2'd0: row = 4'b1110;  // Row 0 active
-            2'd1: row = 4'b1101;  // Row 1 active
-            2'd2: row = 4'b1011;  // Row 2 active
-            2'd3: row = 4'b0111;  // Row 3 active
-            default: row = 4'b1111; // All rows inactive
-        endcase
-    end
-
-    // ========================================================================
-    // KEY DETECTION AND GHOSTING PROTECTION
-    // ========================================================================
-    // Count how many columns are low (pressed)
-    assign col_count = {3'b000, ~col_sync2[0]} + {3'b000, ~col_sync2[1]} + {3'b000, ~col_sync2[2]} + {3'b000, ~col_sync2[3]};
-    
-    // Valid key press: exactly one column low and not all columns high
-    assign key_pressed = (col_sync2 != 4'b1111) && (col_count == 1);
-
-    // ========================================================================
-    // OUTPUT INDEX GENERATION
-    // ========================================================================
-    
-    // Generate one-hot row index for currently active row
-    always_comb begin
-        case (scan_state)
-            2'd0: row_idx = 4'b0001;  // Row 0
-            2'd1: row_idx = 4'b0010;  // Row 1
-            2'd2: row_idx = 4'b0100;  // Row 2
-            2'd3: row_idx = 4'b1000;  // Row 3
-            default: row_idx = 4'b0000; // No row active
-        endcase
-    end
-
-    // Generate one-hot column index from synchronized column inputs
-    always_comb begin
-        if (col_count > 1) begin
-            // Multiple keys pressed - invalid (ghosting protection)
-            col_idx = 4'b0000;
-        end else begin
-            // Single key press - map to one-hot column index
-            case (col_sync2)
-                4'b1110: col_idx = 4'b0001;  // Column 0 pressed
-                4'b1101: col_idx = 4'b0010;  // Column 1 pressed
-                4'b1011: col_idx = 4'b0100;  // Column 2 pressed
-                4'b0111: col_idx = 4'b1000;  // Column 3 pressed
-                default: col_idx = 4'b0000;  // No key pressed
-            endcase
-        end
-    end
-
-endmodule
-
-// ============================================================================
-// TESTBENCH
-// ============================================================================
+`timescale 1ns / 1ps
 
 module tb_keypad_scanner;
 
-    // Testbench signals
-    logic        clk;
-    logic        rst_n;
-    logic        key_valid;
-    logic [3:0]  row;
-    logic [3:0]  col;
-    logic [3:0]  row_idx;
-    logic [3:0]  col_idx;
-    logic        key_pressed;
+    // Clock and Reset
+    logic clk;
+    logic rst_n;
 
-    // Instantiate the scanner
+    // DUT Inputs
+    logic key_valid;
+    logic [3:0] col;
+
+    // DUT Outputs
+    logic [3:0] row;
+    logic [3:0] row_idx;
+    logic [3:0] col_idx;
+    logic key_pressed;
+
+    // Instantiate the DUT
     keypad_scanner dut (
         .clk(clk),
         .rst_n(rst_n),
@@ -167,23 +28,25 @@ module tb_keypad_scanner;
         .key_pressed(key_pressed)
     );
 
-    // Clock generation - 3MHz clock
-    initial clk = 0;
-    always #166.67 clk = ~clk; // 3MHz clock (333.33ns period)
+    // Clock generation
+    initial begin
+        clk = 0;
+        forever #166.67 clk = ~clk; // 3MHz clock (333.33ns period)
+    end
 
-    // Test stimulus
+    // Test sequence
     initial begin
         $display("==========================================");
         $display("KEYPAD SCANNER TESTBENCH");
-        $display("Testing scanner with hold logic");
+        $display("Testing scanner logic with proper stimulus");
         $display("==========================================");
-        
-        // Initialize signals
+
+        // Initialize inputs
         rst_n = 0;
         key_valid = 0;
-        col = 4'b1111; // No keys pressed initially
-        
-        // Reset sequence
+        col = 4'b1111; // No key pressed
+
+        // Apply reset
         $display("Applying reset...");
         repeat(10) @(posedge clk);
         rst_n = 1;
@@ -191,64 +54,170 @@ module tb_keypad_scanner;
         
         $display("Reset complete. Starting test...");
         
-        // Test 1: Normal scanning - show continuous cycling
-        $display("\n--- Test 1: Continuous Scanning ---");
-        $display("Scan period is 6000 cycles, monitoring continuous row transitions...");
+        // Test 1: Verify continuous row scanning
+        $display("\n--- Test 1: Continuous Row Scanning ---");
+        $display("Monitoring row transitions over multiple scan periods...");
         
-        // Show initial state
-        $display("Initial: Rows=%b, Row_idx=%b, Scan_state=%0d, Counter=%0d", 
-                 row, row_idx, dut.scan_state, dut.scan_counter);
+        // Check initial state right after reset
+        $display("Initial state after reset: Rows=%b, Row_idx=%b, Scan_state=%0d", row, row_idx, dut.scan_state);
         
-        // Show multiple complete cycles
-        for (int cycle = 0; cycle < 3; cycle++) begin
-            for (int row_num = 0; row_num < 4; row_num++) begin
+        // Wait for a few scan periods and verify row transitions
+        for (int scan_cycle = 0; scan_cycle < 3; scan_cycle++) begin
+            $display("Scan cycle %0d:", scan_cycle);
+            
+            // Check each row as it becomes active
+            for (int expected_row = 0; expected_row < 4; expected_row++) begin
+                // Wait for scan period (6000 cycles) then check the NEXT row
                 repeat(6000) @(posedge clk);
-                $display("Cycle %0d, Row %0d: Rows=%b, Row_idx=%b, Scan_state=%0d, Counter=%0d", 
-                         cycle, row_num, row, row_idx, dut.scan_state, dut.scan_counter);
+                
+                // Verify the correct row is active (after 6000 cycles, we should be on the next row)
+                case (expected_row)
+                    0: begin
+                        if (row == 4'b1101 && row_idx == 4'b0010) begin
+                            $display("  ✓ Row 1: Rows=%b, Row_idx=%b (after Row 0 period)", row, row_idx);
+                        end else begin
+                            $display("  ✗ Row 1 FAIL: Expected Rows=1101, Row_idx=0010, Got Rows=%b, Row_idx=%b", row, row_idx);
+                        end
+                    end
+                    1: begin
+                        if (row == 4'b1011 && row_idx == 4'b0100) begin
+                            $display("  ✓ Row 2: Rows=%b, Row_idx=%b (after Row 1 period)", row, row_idx);
+                        end else begin
+                            $display("  ✗ Row 2 FAIL: Expected Rows=1011, Row_idx=0100, Got Rows=%b, Row_idx=%b", row, row_idx);
+                        end
+                    end
+                    2: begin
+                        if (row == 4'b0111 && row_idx == 4'b1000) begin
+                            $display("  ✓ Row 3: Rows=%b, Row_idx=%b (after Row 2 period)", row, row_idx);
+                        end else begin
+                            $display("  ✗ Row 3 FAIL: Expected Rows=0111, Row_idx=1000, Got Rows=%b, Row_idx=%b", row, row_idx);
+                        end
+                    end
+                    3: begin
+                        if (row == 4'b1110 && row_idx == 4'b0001) begin
+                            $display("  ✓ Row 0: Rows=%b, Row_idx=%b (after Row 3 period - wrapped around)", row, row_idx);
+                        end else begin
+                            $display("  ✗ Row 0 FAIL: Expected Rows=1110, Row_idx=0001, Got Rows=%b, Row_idx=%b", row, row_idx);
+                        end
+                    end
+                endcase
             end
         end
         
-        // Test 2: Key press with hold logic
-        $display("\n--- Test 2: Key Press with Hold Logic ---");
-        $display("Waiting for row 0 to be active...");
+        // Test 2: Key detection logic
+        $display("\n--- Test 2: Key Detection Logic ---");
         
-        // Wait for row 0 to be driven (active low)
+        // Wait for row 0 to be active
         wait(row == 4'b1110);
-        $display("Row 0 is active! Pressing key...");
+        $display("Row 0 is active, testing key detection...");
         
-        col = 4'b1110; // Pull col 0 low
-        $display("Key pressed - Rows: %b, Cols: %b", row, col);
+        // Test single key press (col 0)
+        col = 4'b1110; // Pull column 0 low
+        repeat(5) @(posedge clk); // Wait for synchronization
         
-        // Monitor for several cycles
-        for (int i = 0; i < 10; i++) begin
-            @(posedge clk);
-            $display("After press cycle %0d: Key_pressed=%b, Key_detected=%b, Row_idx=%b, Col_idx=%b", 
-                     i, key_pressed, dut.key_detected, row_idx, col_idx);
+        if (key_pressed == 1'b1 && col_idx == 4'b0001) begin
+            $display("  ✓ Single key detection: Key_pressed=%b, Col_idx=%b", key_pressed, col_idx);
+        end else begin
+            $display("  ✗ Single key detection FAIL: Expected Key_pressed=1, Col_idx=0001, Got Key_pressed=%b, Col_idx=%b", key_pressed, col_idx);
         end
         
-        // Release key first
-        col = 4'b1111;
-        $display("Key released");
-        
-        // Wait a few cycles for key_pressed to go low
+        // Test multiple key press (should be rejected)
+        col = 4'b1100; // Pull columns 0 and 1 low
         repeat(5) @(posedge clk);
-        $display("After key release: Key_pressed=%b, Key_detected=%b", key_pressed, dut.key_detected);
         
-        // Simulate debouncing complete
-        $display("Simulating debouncing complete...");
+        if (key_pressed == 1'b0 && col_idx == 4'b0000) begin
+            $display("  ✓ Multiple key rejection: Key_pressed=%b, Col_idx=%b", key_pressed, col_idx);
+        end else begin
+            $display("  ✗ Multiple key rejection FAIL: Expected Key_pressed=0, Col_idx=0000, Got Key_pressed=%b, Col_idx=%b", key_pressed, col_idx);
+        end
+        
+        // Test 3: Hold logic when key is detected
+        $display("\n--- Test 3: Hold Logic ---");
+        
+        // Wait for row 0 to be active again
+        col = 4'b1111; // Release all keys
+        repeat(10) @(posedge clk);
+        wait(row == 4'b1110);
+        
+        $display("Row 0 active, pressing key to test hold logic...");
+        col = 4'b1110; // Press key in row 0, col 0
+        repeat(5) @(posedge clk);
+        
+        // Verify key is detected and scanner holds
+        if (dut.key_detected == 1'b1 && dut.held_state == 2'd0) begin
+            $display("  ✓ Key detected and state held: Key_detected=%b, Held_state=%0d", dut.key_detected, dut.held_state);
+        end else begin
+            $display("  ✗ Hold logic FAIL: Expected Key_detected=1, Held_state=0, Got Key_detected=%b, Held_state=%0d", dut.key_detected, dut.held_state);
+        end
+        
+        // Wait for several scan periods and verify scanner is still on row 0
+        repeat(12000) @(posedge clk); // 2 scan periods
+        
+        if (row == 4'b1110 && row_idx == 4'b0001) begin
+            $display("  ✓ Scanner held on row 0 during key press: Rows=%b, Row_idx=%b", row, row_idx);
+        end else begin
+            $display("  ✗ Scanner did not hold FAIL: Expected Rows=1110, Row_idx=0001, Got Rows=%b, Row_idx=%b", row, row_idx);
+        end
+        
+        // Test 4: Resume scanning after key release
+        $display("\n--- Test 4: Resume Scanning After Key Release ---");
+        
+        col = 4'b1111; // Release key
+        repeat(5) @(posedge clk);
+        
+        if (dut.key_detected == 1'b0) begin
+            $display("  ✓ Key detection cleared after release: Key_detected=%b", dut.key_detected);
+        end else begin
+            $display("  ✗ Key detection not cleared FAIL: Expected Key_detected=0, Got Key_detected=%b", dut.key_detected);
+        end
+        
+        // After key release, scanner should stay on the same row (row 0) and then continue normal scanning
+        if (row == 4'b1110 && row_idx == 4'b0001) begin
+            $display("  ✓ Scanner stayed on row 0 after key release: Rows=%b, Row_idx=%b", row, row_idx);
+        end else begin
+            $display("  ✗ Scanner did not stay on row 0 FAIL: Expected Rows=1110, Row_idx=0001, Got Rows=%b, Row_idx=%b", row, row_idx);
+        end
+        
+        // Wait for scanner to continue normal scanning and move to next row
+        repeat(6000) @(posedge clk); // One scan period
+        
+        if (row == 4'b1101 && row_idx == 4'b0010) begin
+            $display("  ✓ Scanner continued normal scanning to row 1: Rows=%b, Row_idx=%b", row, row_idx);
+        end else begin
+            $display("  ✗ Scanner continue scanning FAIL: Expected Rows=1101, Row_idx=0010, Got Rows=%b, Row_idx=%b", row, row_idx);
+        end
+        
+        // Test 5: Resume scanning after key_valid assertion
+        $display("\n--- Test 5: Resume Scanning After key_valid ---");
+        
+        // Wait for row 0 to be active again
+        wait(row == 4'b1110);
+        col = 4'b1110; // Press key
+        repeat(5) @(posedge clk);
+        
+        // Simulate debouncer completing
         key_valid = 1;
         @(posedge clk);
         key_valid = 0;
         
-        // Monitor after debouncing
-        for (int i = 0; i < 10; i++) begin
-            @(posedge clk);
-            $display("After debounce cycle %0d: Key_pressed=%b, Key_detected=%b, Row_idx=%b, Col_idx=%b, Scan_state=%0d", 
-                     i, key_pressed, dut.key_detected, row_idx, col_idx, dut.scan_state);
+        if (dut.key_detected == 1'b0) begin
+            $display("  ✓ Key detection cleared after key_valid: Key_detected=%b", dut.key_detected);
+        end else begin
+            $display("  ✗ Key detection not cleared after key_valid FAIL: Expected Key_detected=0, Got Key_detected=%b", dut.key_detected);
+        end
+        
+        // Wait for scanner to resume
+        repeat(6000) @(posedge clk);
+        
+        if (row == 4'b1101 && row_idx == 4'b0010) begin
+            $display("  ✓ Scanner resumed after key_valid: Rows=%b, Row_idx=%b", row, row_idx);
+        end else begin
+            $display("  ✗ Scanner resume after key_valid FAIL: Expected Rows=1101, Row_idx=0010, Got Rows=%b, Row_idx=%b", row, row_idx);
         end
         
         $display("\n==========================================");
         $display("KEYPAD SCANNER TEST COMPLETE");
+        $display("All logic tests completed!");
         $display("==========================================");
         $stop;
     end
