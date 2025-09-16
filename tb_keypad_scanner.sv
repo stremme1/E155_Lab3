@@ -1,13 +1,7 @@
 // ============================================================================
-// KEYPAD SCANNER MODULE
+// KEYPAD SCANNER TESTBENCH
 // ============================================================================
-// Scans a 4x4 matrix keypad by driving rows sequentially and reading columns.
-// Features:
-// - Column input synchronization (2-stage pipeline)
-// - Fast scanning rate with hold logic for proper debouncing
-// - Ghosting protection (rejects multiple simultaneous key presses)
-// - Active-low row driving with pull-up column detection
-// ============================================================================
+// Tests the keypad_scanner module functionality
 
 module keypad_scanner (
     input  logic        clk,
@@ -141,6 +135,118 @@ module keypad_scanner (
                 default: col_idx = 4'b0000;  // No key pressed
             endcase
         end
+    end
+
+endmodule
+
+// ============================================================================
+// TESTBENCH
+// ============================================================================
+
+module tb_keypad_scanner;
+
+    // Testbench signals
+    logic        clk;
+    logic        rst_n;
+    logic        key_valid;
+    logic [3:0]  row;
+    logic [3:0]  col;
+    logic [3:0]  row_idx;
+    logic [3:0]  col_idx;
+    logic        key_pressed;
+
+    // Instantiate the scanner
+    keypad_scanner dut (
+        .clk(clk),
+        .rst_n(rst_n),
+        .key_valid(key_valid),
+        .row(row),
+        .col(col),
+        .row_idx(row_idx),
+        .col_idx(col_idx),
+        .key_pressed(key_pressed)
+    );
+
+    // Clock generation - 3MHz clock
+    initial clk = 0;
+    always #166.67 clk = ~clk; // 3MHz clock (333.33ns period)
+
+    // Test stimulus
+    initial begin
+        $display("==========================================");
+        $display("KEYPAD SCANNER TESTBENCH");
+        $display("Testing scanner with hold logic");
+        $display("==========================================");
+        
+        // Initialize signals
+        rst_n = 0;
+        key_valid = 0;
+        col = 4'b1111; // No keys pressed initially
+        
+        // Reset sequence
+        $display("Applying reset...");
+        repeat(10) @(posedge clk);
+        rst_n = 1;
+        repeat(10) @(posedge clk);
+        
+        $display("Reset complete. Starting test...");
+        
+        // Test 1: Normal scanning
+        $display("\n--- Test 1: Normal Scanning ---");
+        $display("Monitoring normal scanning behavior...");
+        
+        for (int i = 0; i < 20; i++) begin
+            @(posedge clk);
+            $display("Cycle %0d: Rows=%b, Cols=%b, Key_pressed=%b, Row_idx=%b, Col_idx=%b", 
+                     i, row, col, key_pressed, row_idx, col_idx);
+        end
+        
+        // Test 2: Key press with hold logic
+        $display("\n--- Test 2: Key Press with Hold Logic ---");
+        $display("Waiting for row 0 to be active...");
+        
+        // Wait for row 0 to be driven (active low)
+        wait(row == 4'b1110);
+        $display("Row 0 is active! Pressing key...");
+        
+        col = 4'b1110; // Pull col 0 low
+        $display("Key pressed - Rows: %b, Cols: %b", row, col);
+        
+        // Monitor for several cycles
+        for (int i = 0; i < 10; i++) begin
+            @(posedge clk);
+            $display("After press cycle %0d: Key_pressed=%b, Key_detected=%b, Row_idx=%b, Col_idx=%b", 
+                     i, key_pressed, dut.key_detected, row_idx, col_idx);
+        end
+        
+        // Simulate debouncing complete
+        $display("Simulating debouncing complete...");
+        key_valid = 1;
+        @(posedge clk);
+        key_valid = 0;
+        
+        // Monitor after debouncing
+        for (int i = 0; i < 5; i++) begin
+            @(posedge clk);
+            $display("After debounce cycle %0d: Key_pressed=%b, Key_detected=%b, Row_idx=%b, Col_idx=%b", 
+                     i, key_pressed, dut.key_detected, row_idx, col_idx);
+        end
+        
+        // Release key
+        col = 4'b1111;
+        $display("Key released");
+        
+        // Monitor after release
+        for (int i = 0; i < 5; i++) begin
+            @(posedge clk);
+            $display("After release cycle %0d: Key_pressed=%b, Key_detected=%b", 
+                     i, key_pressed, dut.key_detected);
+        end
+        
+        $display("\n==========================================");
+        $display("KEYPAD SCANNER TEST COMPLETE");
+        $display("==========================================");
+        $stop;
     end
 
 endmodule
