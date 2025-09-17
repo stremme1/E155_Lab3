@@ -10,7 +10,7 @@ module keypad_controller (
     input  logic [3:0]  key_code,      // Key code from keypad scanner
     input  logic        key_valid,     // Valid key press signal
     output logic [3:0]  digit_left,    // Left display digit
-    output logic [3:0]  digit_right   // Right display digit
+    output logic [3:0]  digit_right    // Right display digit
 );
 
     // Digit controller logic - implements digit shifting behavior

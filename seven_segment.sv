@@ -3,8 +3,8 @@
 // Seven-segment display decoder: Converts 4-bit binary input to 7-segment display pattern
 
 module seven_segment (
-    input  logic [3:0] num,     // 4-bit input number (0-15)
-    output logic [6:0] seg      // 7-bit output for segments a-g (active low)
+    input  logic [3:0]  num,     // 4-bit input number (0-15)
+    output logic [6:0]  seg      // 7-bit output for segments a-g (active low)
 );
 
 // Seven-segment display mapping (segments a-g):
