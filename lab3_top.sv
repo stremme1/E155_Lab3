@@ -1,6 +1,14 @@
+// ============================================================================
+// LAB3 TOP MODULE - FINAL VERSION
+// ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
 // Lab3 Top Module - Keypad Scanner with Display System
+// 
+// CLOCK SELECTION:
+// - For HARDWARE: Use HSOSC (currently active)
+// - For SIMULATION: Comment out HSOSC and uncomment simulation clock
+// ============================================================================
 
 module lab3_top (
     input  logic        reset,         // Active-low reset signal
@@ -11,8 +19,10 @@ module lab3_top (
     output logic        select1        // Display 1 power control
 );
 
-    // Internal signals
-    logic        clk;                  // Internal clock from HSOSC
+    // ========================================================================
+    // INTERNAL SIGNALS
+    // ========================================================================
+    logic        clk;                  // Internal clock
     logic [3:0]  row_idx;              // Row index from scanner
     logic [3:0]  col_sync;             // Synchronized column data from scanner
     logic        key_detected;         // Key detection signal from scanner
@@ -23,15 +33,27 @@ module lab3_top (
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
 
-    // Clock generation - use HSOSC for synthesis, clock_gen for simulation
-    // For synthesis: HSOSC #(.CLKHF_DIV(2'b10)) hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
-    // For simulation: clock_gen sim_clk (.clk(clk));
+    // ========================================================================
+    // CLOCK GENERATION
+    // ========================================================================
     
-    // Use HSOSC for synthesis (physical hardware)
+    // HARDWARE CLOCK - HSOSC (ACTIVE FOR HARDWARE)
     // CLKHF_DIV(2'b11) = divide by 16 to get 3MHz from 48MHz
-    HSOSC #(.CLKHF_DIV(2'b11)) hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
+    HSOSC #(.CLKHF_DIV(2'b11)) hf_osc (
+        .CLKHFPU(1'b1), 
+        .CLKHFEN(1'b1), 
+        .CLKHF(clk)
+    );
+    
+    // SIMULATION CLOCK - UNCOMMENT FOR SIMULATION
+    // initial begin
+    //     clk = 0;
+    //     forever #166.67 clk = ~clk; // 3MHz clock (333.33ns period)
+    // end
 
-    // Keypad scanner
+    // ========================================================================
+    // KEYPAD SCANNER
+    // ========================================================================
     keypad_scanner scanner_inst (
         .clk(clk),
         .rst_n(reset),
@@ -42,7 +64,9 @@ module lab3_top (
         .key_detected(key_detected)
     );
     
-    // Keypad debouncer
+    // ========================================================================
+    // KEYPAD DEBOUNCER
+    // ========================================================================
     keypad_debouncer debouncer_inst (
         .clk(clk),
         .rst_n(reset),
@@ -54,14 +78,18 @@ module lab3_top (
         .key_col(key_col)
     );
     
-    // Keypad decoder - converts row/col to key code
+    // ========================================================================
+    // KEYPAD DECODER
+    // ========================================================================
     keypad_decoder decoder_inst (
         .row_onehot(key_row),
         .col_onehot(key_col),
         .key_code(key_code)
     );
     
-    // Keypad controller
+    // ========================================================================
+    // KEYPAD CONTROLLER
+    // ========================================================================
     keypad_controller controller_inst (
         .clk(clk),
         .rst_n(reset),
@@ -71,6 +99,9 @@ module lab3_top (
         .digit_right(digit_right)
     );
 
+    // ========================================================================
+    // DISPLAY SYSTEM
+    // ========================================================================
     // Use existing Lab2_ES display system (single seven_segment instance)
     // Note: Lab2_ES expects active-high reset, so we invert the active-low reset signal
     Lab2_ES display_system (
@@ -82,6 +113,5 @@ module lab3_top (
         .select0(select0),             // Display 0 power control
         .select1(select1)              // Display 1 power control
     );
-
 
 endmodule

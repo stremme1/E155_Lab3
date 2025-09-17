@@ -1,6 +1,10 @@
+// ============================================================================
+// SEVEN SEGMENT DISPLAY MODULE
+// ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 08/29/25
 // Seven-segment display decoder: Converts 4-bit binary input to 7-segment display pattern
+// ============================================================================
 
 module seven_segment (
     input  logic [3:0]  num,     // 4-bit input number (0-15)

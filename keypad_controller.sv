@@ -1,8 +1,12 @@
+// ============================================================================
+// KEYPAD CONTROLLER MODULE
+// ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
 // Lab3 Keypad Controller - Digit Controller Logic
 // This module implements digit controller logic for the keypad system.
 // When a key is pressed, it shifts the left digit to the right and puts the new key in the left position.
+// ============================================================================
 
 module keypad_controller (
     input  logic        clk,           // System clock

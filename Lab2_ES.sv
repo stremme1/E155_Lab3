@@ -1,7 +1,11 @@
+// ============================================================================
+// LAB2_ES DISPLAY SYSTEM MODULE
+// ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
 // Lab2_ES - Seven Segment Display System
 // This module implements a dual seven-segment display system with multiplexing
+// ============================================================================
 
 module Lab2_ES (
     input  logic        clk,           // System clock

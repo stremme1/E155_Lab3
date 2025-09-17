@@ -1,3 +1,9 @@
+// ============================================================================
+// KEYPAD DEBOUNCER MODULE
+// ============================================================================
+// FSM-based debouncer with 3 states: IDLE, DEBOUNCING, KEY_VALID
+// ============================================================================
+
 module keypad_debouncer (
     input  logic        clk,
     input  logic        rst_n,

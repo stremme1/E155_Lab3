@@ -1,7 +1,11 @@
+// ============================================================================
+// KEYPAD DECODER MODULE
+// ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
 // Lab3 Keypad Decoder
 // Converts row/column one-hot signals to 4-bit key codes
+// ============================================================================
 
 module keypad_decoder (
     input  logic [3:0] row_onehot,
