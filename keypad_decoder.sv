@@ -4,9 +4,9 @@
 // Converts row/column one-hot signals to 4-bit key codes
 
 module keypad_decoder (
-    input  logic [3:0]  row_onehot,
-    input  logic [3:0]  col_onehot,
-    output logic [3:0]  key_code   // 4-bit hex code 0000..1111
+    input  logic [3:0] row_onehot,
+    input  logic [3:0] col_onehot,
+    output logic [3:0] key_code    // 4-bit hex code 0000..1111
 );
 
     always_comb begin
