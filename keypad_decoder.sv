@@ -32,9 +32,9 @@ module keypad_decoder (
             {4'b0100, 4'b1000}: key_code = 4'b1100; // C
 
             // row3 (1000)
-            {4'b1000, 4'b0001}: key_code = 4'b1110; // E
-            {4'b1000, 4'b0010}: key_code = 4'b0000; // 0
-            {4'b1000, 4'b0100}: key_code = 4'b1111; // F
+            {4'b1000, 4'b0001}: key_code = 4'b0000; // 0
+            {4'b1000, 4'b0010}: key_code = 4'b1111; // F
+            {4'b1000, 4'b0100}: key_code = 4'b1110; // E
             {4'b1000, 4'b1000}: key_code = 4'b1101; // D
 
             default: key_code = 4'b0000;
