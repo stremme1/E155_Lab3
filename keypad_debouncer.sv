@@ -10,7 +10,8 @@ module keypad_debouncer (
     input  logic [3:0]  key_code,     // from decoder (4-bit key code)
     input  logic        key_detected, // from scanner (any key pressed)
     output logic        key_valid,    // debounced valid key press
-    output logic [3:0]  debounced_key // debounced key code
+    output logic [3:0]  debounced_key, // debounced key code
+	output logic 		scan_stop
 );
 
     // ========================================================================
@@ -41,15 +42,17 @@ module keypad_debouncer (
             case (current_state)
                 IDLE: begin
                     // Check for valid key press (ghosting protection: only single keys)
-                    if (key_detected && key_code != 4'b0000) begin
+                    if (key_detected /*&& key_code != 4'b0000*/) begin
                         current_state <= DEBOUNCING;
                         latched_key <= key_code;
                         debounce_cnt <= 20'd0;
+						
                     end
+					else current_state <= IDLE;
                 end
                 
                 DEBOUNCING: begin
-                    if (!key_detected || key_code == 4'b0000) begin
+                    if (!key_detected /*|| key_code == 4'b0000*/) begin
                         // Key released or invalid, go back to IDLE
                         current_state <= IDLE;
                     end else if (debounce_cnt >= DEBOUNCE_MAX) begin
@@ -76,9 +79,11 @@ module keypad_debouncer (
             IDLE: begin
                 key_valid = 1'b0;
                 debounced_key = 4'b0000;
+				scan_stop = 1'b0;
             end
             
             DEBOUNCING: begin
+				scan_stop = 1'b1;
                 if (debounce_cnt >= DEBOUNCE_MAX) begin
                     key_valid = 1'b1;
                     debounced_key = latched_key;
