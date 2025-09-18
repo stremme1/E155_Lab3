@@ -32,6 +32,7 @@ module lab3_top (
     logic [3:0]  debounced_key;        // Debounced key code from debouncer
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
+	logic scan_stop;
 
     // ========================================================================
     // CLOCK GENERATION
@@ -61,7 +62,8 @@ module lab3_top (
         .col(keypad_cols),
         .row_idx(row_idx),
         .col_sync(col_sync),
-        .key_detected(key_detected)
+        .key_detected(key_detected),
+		.scan_stop(scan_stop)
     );
     
     // ========================================================================
@@ -79,7 +81,7 @@ module lab3_top (
     end
 
     // ========================================================================
-    // KEYPAD DECODER (Scanner → Decoder)
+    // KEYPAD DECODER (Scanner â†’ Decoder)
     // ========================================================================
     keypad_decoder decoder_inst (
         .row_onehot(row_idx),
@@ -88,7 +90,7 @@ module lab3_top (
     );
     
     // ========================================================================
-    // KEYPAD DEBOUNCER (Decoder → Debouncer)
+    // KEYPAD DEBOUNCER (Decoder â†’ Debouncer)
     // ========================================================================
     keypad_debouncer debouncer_inst (
         .clk(clk),
@@ -96,11 +98,12 @@ module lab3_top (
         .key_code(raw_key_code),
         .key_detected(key_detected),
         .key_valid(key_valid),
-        .debounced_key(debounced_key)
+        .debounced_key(debounced_key),
+		.scan_stop(scan_stop)
     );
     
     // ========================================================================
-    // KEYPAD CONTROLLER (Debouncer → Controller)
+    // KEYPAD CONTROLLER (Debouncer â†’ Controller)
     // ========================================================================
     keypad_controller controller_inst (
         .clk(clk),
