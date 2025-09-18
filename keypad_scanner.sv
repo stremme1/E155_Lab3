@@ -17,7 +17,8 @@ module keypad_scanner (
     input  logic [3:0]  col,          // Column inputs (pull-up, async)
     output logic [3:0]  row_idx,      // One-hot row index
     output logic [3:0]  col_sync,     // Synchronized column inputs
-    output logic        key_detected  // Key press detected (any column active)
+    output logic        key_detected,  // Key press detected (any column active)
+	input logic 		scan_stop
 );
 
     // ========================================================================
@@ -100,25 +101,38 @@ module keypad_scanner (
         
         case (current_state)
             SCAN_ROW0: begin
-                if (scan_timeout) begin
+				if (scan_stop) begin
+					next_state = SCAN_ROW0;
+				end
+                else if (scan_timeout) begin
                     next_state = SCAN_ROW1;
                 end
             end
             
             SCAN_ROW1: begin
-                if (scan_timeout) begin
+				if (scan_stop) begin
+					next_state = SCAN_ROW1;
+				end
+                else if (scan_timeout) begin
                     next_state = SCAN_ROW2;
                 end
             end
+			
             
             SCAN_ROW2: begin
-                if (scan_timeout) begin
+				if (scan_stop) begin
+					next_state = SCAN_ROW2;
+				end
+                else if (scan_timeout) begin
                     next_state = SCAN_ROW3;
                 end
             end
             
             SCAN_ROW3: begin
-                if (scan_timeout) begin
+				if (scan_stop) begin
+					next_state = SCAN_ROW3;
+				end
+                else if (scan_timeout) begin
                     next_state = SCAN_ROW0;  // Continuous scanning
                 end
             end
