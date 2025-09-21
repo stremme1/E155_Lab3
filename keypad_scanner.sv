@@ -1,13 +1,10 @@
 // ============================================================================
 // KEYPAD SCANNER MODULE
 // ============================================================================
+// Emmett Stralka estralka@hmc.edu
+// 09/09/25
+// Lab3 Keypad Scanner - Matrix Keypad Scanning Logic
 // Scans a 4x4 matrix keypad by driving rows sequentially and reading columns.
-// Features:
-// - Column input synchronization (2-stage pipeline)
-// - Continuous row scanning with configurable timing
-// - Active-low row driving with pull-up column detection
-// - Provides synchronized column data for external processing
-// - Key detection output for decoder integration
 // ============================================================================
 
 module keypad_scanner (

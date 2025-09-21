@@ -12,6 +12,7 @@ module tb_debouncer;
     logic        key_detected;
     logic        key_valid;
     logic [3:0]  debounced_key;
+    logic        scan_stop;
 
     // Instantiate debouncer
     keypad_debouncer dut (
@@ -20,7 +21,8 @@ module tb_debouncer;
         .key_code(key_code),
         .key_detected(key_detected),
         .key_valid(key_valid),
-        .debounced_key(debounced_key)
+        .debounced_key(debounced_key),
+        .scan_stop(scan_stop)
     );
 
     // Clock generation (3MHz)

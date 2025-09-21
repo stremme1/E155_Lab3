@@ -11,6 +11,7 @@ module tb_scanner;
     logic [3:0]  row, col;
     logic [3:0]  row_idx, col_sync;
     logic        key_detected;
+    logic        scan_stop;
 
     // Instantiate scanner
     keypad_scanner dut (
@@ -20,7 +21,8 @@ module tb_scanner;
         .col(col),
         .row_idx(row_idx),
         .col_sync(col_sync),
-        .key_detected(key_detected)
+        .key_detected(key_detected),
+        .scan_stop(scan_stop)
     );
 
     // Clock generation (3MHz)

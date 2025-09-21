@@ -1,7 +1,11 @@
 // ============================================================================
 // LAB3 TOP MODULE - SIMULATION VERSION
 // ============================================================================
-// Simulation version without HSOSC for testing
+// Emmett Stralka estralka@hmc.edu
+// 09/09/25
+// Lab3 Top Module - Simulation Version
+// Simulation version without HSOSC for testing. Uses internal clock generation
+// for simulation purposes instead of hardware oscillator.
 // ============================================================================
 
 module lab3_top_sim (

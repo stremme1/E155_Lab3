@@ -1,7 +1,12 @@
 // ============================================================================
-// KEYPAD DEBOUNCER MODULE - FIXED VERSION
+// KEYPAD DEBOUNCER MODULE
 // ============================================================================
-// Simple, reliable debouncer that definitely works
+// Emmett Stralka estralka@hmc.edu
+// 09/09/25
+// Lab3 Keypad Debouncer - Switch Debouncing Logic
+// This module implements a 2-state debouncer to eliminate switch bouncing
+// and ensure each key press is registered only once. Features 20ms debounce
+// period and proper state machine implementation.
 // ============================================================================
 
 module keypad_debouncer (
@@ -96,6 +101,7 @@ module keypad_debouncer (
             default: begin
                 key_valid = 1'b0;
                 debounced_key = 4'b0000;
+                scan_stop = 1'b0;
             end
         endcase
     end
