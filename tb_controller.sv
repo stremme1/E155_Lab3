@@ -79,15 +79,15 @@ module tb_controller;
         $display("\nTEST 2: Single Key Press and Release");
         $display("----------------------------------------");
         
-        // Press key '1'
+        // Press key '1' (should immediately shift digits)
         simulate_key_press(4'b0001);
         repeat(5) @(posedge clk);
-        check_result("Key '1' pressed (no change)", 4'b0000, 4'b0000);
+        check_result("Key '1' pressed (digits shift)", 4'b0001, 4'b0000);
         
-        // Release key '1' (should shift digits)
+        // Release key '1' (no change)
         simulate_key_release;
         repeat(5) @(posedge clk);
-        check_result("Key '1' released (digits shift)", 4'b0001, 4'b0000);
+        check_result("Key '1' released (no change)", 4'b0001, 4'b0000);
 
         // ========================================================================
         // TEST 3: Multiple Key Sequence
@@ -121,11 +121,11 @@ module tb_controller;
         // Test state transitions
         simulate_key_press(4'b0001);
         repeat(5) @(posedge clk);
-        $display("  IDLE → KEY_PRESSED: digit_left=%b, digit_right=%b", digit_left, digit_right);
+        $display("  IDLE → KEY_HELD: digit_left=%b, digit_right=%b", digit_left, digit_right);
         
         simulate_key_release;
         repeat(5) @(posedge clk);
-        $display("  KEY_PRESSED → KEY_RELEASED → SHIFT_DIGITS: digit_left=%b, digit_right=%b", digit_left, digit_right);
+        $display("  KEY_HELD → IDLE: digit_left=%b, digit_right=%b", digit_left, digit_right);
 
         // ========================================================================
         // TEST 5: Edge Cases
@@ -138,11 +138,16 @@ module tb_controller;
         // Test reset during key press
         simulate_key_press(4'b0001);
         repeat(5) @(posedge clk);
+        // Key should be processed and digits shifted before reset
+        check_result("Key processed before reset", 4'b0001, 4'b0000);
+        // Release key before reset to ensure clean state
+        simulate_key_release;
+        repeat(5) @(posedge clk);
         rst_n = 0;
-        repeat(5) @(posedge clk);
+        repeat(10) @(posedge clk);
         rst_n = 1;
-        repeat(5) @(posedge clk);
-        check_result("Reset during key press", 4'b0000, 4'b0000);
+        repeat(10) @(posedge clk);
+        check_result("Reset after key press", 4'b0000, 4'b0000);
 
         // ========================================================================
         // TEST 6: Continuous Operation

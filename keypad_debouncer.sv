@@ -20,18 +20,19 @@ module keypad_debouncer (
 );
 
     // ========================================================================
-    // SIMPLE 2-STATE DEBOUNCER
+    // ENHANCED 3-STATE DEBOUNCER WITH MULTIPLE KEY PROTECTION
     // ========================================================================
-    typedef enum logic {
+    typedef enum logic [1:0] {
         IDLE,           // No key pressed
-        DEBOUNCING      // Key pressed, debouncing
+        DEBOUNCING,     // Key pressed, debouncing
+        KEY_HELD        // Key held, ignore additional presses
     } debouncer_state_t;
     
     debouncer_state_t current_state;
     
-    // Debounce counter and latched key
+    // Debounce counter and key
     logic [19:0] debounce_cnt;
-    logic [3:0]  latched_key;
+    logic [3:0]  l_key;
     
     localparam int DEBOUNCE_MAX = 20'd59999; // ~20ms @ 3MHz
 
@@ -42,31 +43,37 @@ module keypad_debouncer (
         if (!rst_n) begin
             current_state <= IDLE;
             debounce_cnt <= 20'd0;
-            latched_key <= 4'b0000;
+            l_key <= 4'b0000;
         end else begin
             case (current_state)
                 IDLE: begin
                     // Check for valid key press (ghosting protection: only single keys)
-                    if (key_detected /*&& key_code != 4'b0000*/) begin
+                    if (key_detected && key_code != 4'b0000) begin
                         current_state <= DEBOUNCING;
-                        latched_key <= key_code;
+                        l_key <= key_code;
                         debounce_cnt <= 20'd0;
-						
                     end
-					else current_state <= IDLE;
                 end
                 
                 DEBOUNCING: begin
-                    if (!key_detected /*|| key_code == 4'b0000*/) begin
+                    if (!key_detected || key_code == 4'b0000) begin
                         // Key released or invalid, go back to IDLE
                         current_state <= IDLE;
                     end else if (debounce_cnt >= DEBOUNCE_MAX) begin
-                        // Debounce complete, stay in DEBOUNCING but don't change state
-                        // The key is now valid
+                        // Debounce complete, move to KEY_HELD state
+                        current_state <= KEY_HELD;
                     end else begin
                         // Continue debouncing
                         debounce_cnt <= debounce_cnt + 1;
                     end
+                end
+                
+                KEY_HELD: begin
+                    if (!key_detected || key_code == 4'b0000) begin
+                        // Key released, go back to IDLE
+                        current_state <= IDLE;
+                    end
+                    // Stay in KEY_HELD state while key is pressed, ignore additional key presses
                 end
                 
                 default: begin
@@ -84,18 +91,24 @@ module keypad_debouncer (
             IDLE: begin
                 key_valid = 1'b0;
                 debounced_key = 4'b0000;
-				scan_stop = 1'b0;
+                scan_stop = 1'b0;
             end
             
             DEBOUNCING: begin
-				scan_stop = 1'b1;
+                scan_stop = 1'b1;
                 if (debounce_cnt >= DEBOUNCE_MAX) begin
                     key_valid = 1'b1;
-                    debounced_key = latched_key;
+                    debounced_key = l_key;
                 end else begin
                     key_valid = 1'b0;
                     debounced_key = 4'b0000;
                 end
+            end
+            
+            KEY_HELD: begin
+                scan_stop = 1'b1;
+                key_valid = 1'b0;  // No new key valid while key is held
+                debounced_key = 4'b0000;  // Don't output key code while held
             end
             
             default: begin

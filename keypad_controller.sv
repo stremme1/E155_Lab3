@@ -21,9 +21,9 @@ module keypad_controller (
 
     logic [3:0] left_digit_reg, right_digit_reg;
     logic [3:0] new_key;  // Store new key code
-    logic [2:0] state;    // State machine: 000=idle, 001=key_pressed, 010=key_released, 011=shift_digits
+    logic [2:0] state;    // State machine: 000=idle, 001=key_held
     
-    // State machine for key press/release detection and digit shifting
+    // State machine for key press detection and digit shifting
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             left_digit_reg <= 4'h0;
@@ -35,22 +35,19 @@ module keypad_controller (
             case (state)
                 3'b000: begin // Idle state
                     if (key_valid) begin
-                        // Key pressed - store key code and go to pressed state
+                        // Key pressed - immediately shift digits and display new key
+                        right_digit_reg <= left_digit_reg;
+                        left_digit_reg <= key_code;
                         new_key <= key_code;
-                        state <= 3'b001;
+                        state <= 3'b001; // Go to key held state
                     end
                 end
-                3'b001: begin // Key pressed state
+                3'b001: begin // Key held state
                     if (!key_valid) begin
-                        // Key released - go to released state
-                        state <= 3'b010;
+                        // Key released - return to idle
+                        state <= 3'b000;
                     end
-                end
-                3'b010: begin // Key released state - shift digits
-                    // Shift left digit to right, put new key in left
-                    right_digit_reg <= left_digit_reg;
-                    left_digit_reg <= new_key;
-                    state <= 3'b000; // Return to idle
+                    // Stay in this state while key is held, ignore additional key presses
                 end
                 default: begin
                     state <= 3'b000;
