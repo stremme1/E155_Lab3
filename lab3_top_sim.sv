@@ -30,6 +30,7 @@ module lab3_top_sim (
     logic [3:0]  debounced_key;        // Debounced key code from debouncer
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
+    logic        scan_stop;            // Scan stop signal from debouncer
 
     // ========================================================================
     // SIMULATION CLOCK GENERATION
@@ -49,7 +50,8 @@ module lab3_top_sim (
         .col(keypad_cols),
         .row_idx(row_idx),
         .col_sync(col_sync),
-        .key_detected(key_detected)
+        .key_detected(key_detected),
+        .scan_stop(scan_stop)
     );
     
     // ========================================================================
@@ -84,7 +86,8 @@ module lab3_top_sim (
         .key_code(raw_key_code),
         .key_detected(key_detected),
         .key_valid(key_valid),
-        .debounced_key(debounced_key)
+        .debounced_key(debounced_key),
+        .scan_stop(scan_stop)
     );
     
     // ========================================================================
