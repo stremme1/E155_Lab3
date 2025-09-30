@@ -26,12 +26,12 @@ module lab3_top (
     logic [3:0]  row_idx;              // Row index from scanner (one-hot)
     logic [3:0]  col_sync;             // Synchronized column data from scanner (raw)
     logic        key_detected;         // Key detection signal from scanner
-    logic [3:0]  col_onehot;           // Column data converted to one-hot
-    logic [3:0]  raw_key_code;         // Raw key code from decoder
+    logic [15:0] key_matrix;           // Key matrix from scanner
     logic        key_valid;            // Debounced valid key press signal
-    logic [3:0]  debounced_key;        // Debounced key code from debouncer
+    logic [15:0] debounced_matrix;     // Debounced key matrix from debouncer
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
+    logic [15:0] pressed_keys;         // Currently pressed keys
 	logic scan_stop;
 
     // ========================================================================
@@ -63,55 +63,34 @@ module lab3_top (
         .row_idx(row_idx),
         .col_sync(col_sync),
         .key_detected(key_detected),
+        .key_matrix(key_matrix),
 		.scan_stop(scan_stop)
     );
     
     // ========================================================================
-    // COLUMN CONVERSION: Raw to One-Hot
-    // ========================================================================
-    // Convert synchronized column data to one-hot format for decoder
-    always_comb begin
-        case (col_sync)
-            4'b1110: col_onehot = 4'b0001;  // Column 0 pressed
-            4'b1101: col_onehot = 4'b0010;  // Column 1 pressed
-            4'b1011: col_onehot = 4'b0100;  // Column 2 pressed
-            4'b0111: col_onehot = 4'b1000;  // Column 3 pressed
-            default: col_onehot = 4'b0000;  // No key or multiple keys
-        endcase
-    end
-
-    // ========================================================================
-    // KEYPAD DECODER (Scanner â†’ Decoder)
-    // ========================================================================
-    keypad_decoder decoder_inst (
-        .row_onehot(row_idx),
-        .col_onehot(col_onehot),
-        .key_code(raw_key_code)
-    );
-    
-    // ========================================================================
-    // KEYPAD DEBOUNCER (Decoder â†’ Debouncer)
+    // KEYPAD DEBOUNCER (Scanner â†' Debouncer)
     // ========================================================================
     keypad_debouncer debouncer_inst (
         .clk(clk),
         .rst_n(reset),
-        .key_code(raw_key_code),
+        .key_matrix(key_matrix),
         .key_detected(key_detected),
         .key_valid(key_valid),
-        .debounced_key(debounced_key),
+        .debounced_matrix(debounced_matrix),
 		.scan_stop(scan_stop)
     );
     
     // ========================================================================
-    // KEYPAD CONTROLLER (Debouncer â†’ Controller)
+    // KEYPAD CONTROLLER (Debouncer â†' Controller)
     // ========================================================================
     keypad_controller controller_inst (
         .clk(clk),
         .rst_n(reset),
-        .key_code(debounced_key),
+        .key_matrix(debounced_matrix),
         .key_valid(key_valid),
         .digit_left(digit_left),
-        .digit_right(digit_right)
+        .digit_right(digit_right),
+        .pressed_keys(pressed_keys)
     );
 
     // ========================================================================

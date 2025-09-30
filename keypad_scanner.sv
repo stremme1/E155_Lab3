@@ -25,7 +25,7 @@ module keypad_scanner (
     localparam int SCAN_PERIOD = 32'd5999; // ~2ms per row @ 3MHz (fast scanning)
     
     // FSM State definitions for multi-key scanning
-    typedef enum logic [1:0] {
+    typedef enum logic [2:0] {
         SCAN_ALL_ROWS,      // Scan all rows simultaneously
         SCAN_ROW0,          // Individual row scanning (fallback)
         SCAN_ROW1,          // Individual row scanning (fallback)
@@ -166,9 +166,8 @@ module keypad_scanner (
         end else begin
             case (current_state)
                 SCAN_ALL_ROWS: begin
-                    // Store column data for each row
-                    // This is a simplified approach - in practice, we'd need to scan each row
-                    // but we'll use the individual row scanning as fallback
+                    // For multi-key detection, we need to scan each row individually
+                    // This state will transition to individual row scanning
                     key_matrix_reg <= {
                         row3_cols,  // Row 3 (top row)
                         row2_cols,  // Row 2 

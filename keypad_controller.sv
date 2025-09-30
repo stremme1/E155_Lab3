@@ -27,7 +27,7 @@ module keypad_controller (
     // Function to find first pressed key in matrix (for digit display)
     function [3:0] find_first_key(input [15:0] matrix);
         begin
-            find_first_key = 4'h0;
+            find_first_key = 4'h0;  // Default case
             if (matrix[0]) find_first_key = 4'h0;  // Key 0
             else if (matrix[1]) find_first_key = 4'h1;  // Key 1
             else if (matrix[2]) find_first_key = 4'h2;  // Key 2
@@ -44,6 +44,7 @@ module keypad_controller (
             else if (matrix[13]) find_first_key = 4'hD;  // Key D
             else if (matrix[14]) find_first_key = 4'hE;  // Key E
             else if (matrix[15]) find_first_key = 4'hF;  // Key F
+            else find_first_key = 4'h0;  // No key pressed
         end
     endfunction
     
