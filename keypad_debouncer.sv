@@ -24,9 +24,10 @@ module keypad_debouncer (
     // ========================================================================
     // ENHANCED 3-STATE DEBOUNCER WITH MULTIPLE KEY PROTECTION
     // ========================================================================
-    typedef enum logic [1:0] {
+    typedef enum logic [2:0] {
         IDLE,           // No key pressed
         DEBOUNCING,     // Key pressed, debouncing
+        KEY_VALID,      // Key valid for one clock cycle
         KEY_HELD        // Key held, ignore additional presses
     } debouncer_state_t;
     
@@ -65,12 +66,17 @@ module keypad_debouncer (
                         // Ghosting detected - go back to IDLE
                         current_state <= IDLE;
                     end else if (debounce_cnt >= DEBOUNCE_MAX) begin
-                        // Debounce complete, move to KEY_HELD state
-                        current_state <= KEY_HELD;
+                        // Debounce complete, move to KEY_VALID state for one cycle
+                        current_state <= KEY_VALID;
                     end else begin
                         // Continue debouncing
                         debounce_cnt <= debounce_cnt + 1;
                     end
+                end
+                
+                KEY_VALID: begin
+                    // Key valid for one clock cycle, then move to KEY_HELD
+                    current_state <= KEY_HELD;
                 end
                 
                 KEY_HELD: begin
@@ -103,13 +109,15 @@ module keypad_debouncer (
             DEBOUNCING: begin
                 scan_stop = 1'b1;
                 held_key_code = 4'b0000;
-                if (debounce_cnt >= DEBOUNCE_MAX) begin
-                    key_valid = 1'b1;
-                    debounced_key = l_key;
-                end else begin
-                    key_valid = 1'b0;
-                    debounced_key = 4'b0000;
-                end
+                key_valid = 1'b0;  // No key valid during debouncing
+                debounced_key = 4'b0000;
+            end
+            
+            KEY_VALID: begin
+                scan_stop = 1'b1;
+                key_valid = 1'b1;      // Key valid for one clock cycle
+                debounced_key = l_key; // Output the debounced key
+                held_key_code = 4'b0000;
             end
             
             KEY_HELD: begin
