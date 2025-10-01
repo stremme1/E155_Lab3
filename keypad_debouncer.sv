@@ -37,7 +37,7 @@ module keypad_debouncer (
     logic [19:0] debounce_cnt;
     logic [3:0]  l_key;
     
-    localparam int DEBOUNCE_MAX = 20'd20; // ~100ns for testing
+    localparam int DEBOUNCE_MAX = 20'd59999; // ~20ms @ 3MHz for real hardware
 
     // ========================================================================
     // DEBOUNCER FSM
