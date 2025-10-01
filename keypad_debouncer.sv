@@ -14,8 +14,10 @@ module keypad_debouncer (
     input  logic        rst_n,
     input  logic [3:0]  key_code,     // from decoder (4-bit key code)
     input  logic        key_detected, // from scanner (any key pressed)
+    input  logic        ghosting_detected, // from scanner (multiple keys in same column)
     output logic        key_valid,    // debounced valid key press
     output logic [3:0]  debounced_key, // debounced key code
+    output logic [3:0]  held_key_code, // held key code for display
 	output logic 		scan_stop
 );
 
@@ -34,7 +36,7 @@ module keypad_debouncer (
     logic [19:0] debounce_cnt;
     logic [3:0]  l_key;
     
-    localparam int DEBOUNCE_MAX = 20'd59999; // ~20ms @ 3MHz
+    localparam int DEBOUNCE_MAX = 20'd10; // ~100ns for testing
 
     // ========================================================================
     // DEBOUNCER FSM
@@ -48,7 +50,7 @@ module keypad_debouncer (
             case (current_state)
                 IDLE: begin
                     // Check for valid key press (ghosting protection: only single keys)
-                    if (key_detected && key_code != 4'b0000) begin
+                    if (key_detected && key_code != 4'b0000 && !ghosting_detected) begin
                         current_state <= DEBOUNCING;
                         l_key <= key_code;
                         debounce_cnt <= 20'd0;
@@ -57,7 +59,10 @@ module keypad_debouncer (
                 
                 DEBOUNCING: begin
                     if (!key_detected || key_code == 4'b0000) begin
-                        // Key released or invalid, go back to IDLE
+                        // Key released or invalid - go back to IDLE
+                        current_state <= IDLE;
+                    end else if (ghosting_detected) begin
+                        // Ghosting detected - go back to IDLE
                         current_state <= IDLE;
                     end else if (debounce_cnt >= DEBOUNCE_MAX) begin
                         // Debounce complete, move to KEY_HELD state
@@ -91,11 +96,13 @@ module keypad_debouncer (
             IDLE: begin
                 key_valid = 1'b0;
                 debounced_key = 4'b0000;
+                held_key_code = 4'b0000;
                 scan_stop = 1'b0;
             end
             
             DEBOUNCING: begin
                 scan_stop = 1'b1;
+                held_key_code = 4'b0000;
                 if (debounce_cnt >= DEBOUNCE_MAX) begin
                     key_valid = 1'b1;
                     debounced_key = l_key;
@@ -106,14 +113,16 @@ module keypad_debouncer (
             end
             
             KEY_HELD: begin
-                scan_stop = 1'b1;
+                scan_stop = 1'b0;  // Continue scanning for ghosting detection
                 key_valid = 1'b0;  // No new key valid while key is held
                 debounced_key = 4'b0000;  // Don't output key code while held
+                held_key_code = l_key;  // Output held key for display
             end
             
             default: begin
                 key_valid = 1'b0;
                 debounced_key = 4'b0000;
+                held_key_code = 4'b0000;
                 scan_stop = 1'b0;
             end
         endcase
