@@ -26,12 +26,10 @@ module lab3_top (
     logic [3:0]  row_idx;              // Row index from scanner (one-hot)
     logic [3:0]  col_sync;             // Synchronized column data from scanner (raw)
     logic        key_detected;         // Key detection signal from scanner
-    logic        ghosting_detected;   // Ghosting detection signal from scanner
     logic [3:0]  col_onehot;           // Column data converted to one-hot
     logic [3:0]  raw_key_code;         // Raw key code from decoder
     logic        key_valid;            // Debounced valid key press signal
     logic [3:0]  debounced_key;        // Debounced key code from debouncer
-    logic [3:0]  held_key_code;        // Held key code from debouncer
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
 	logic scan_stop;
@@ -65,7 +63,6 @@ module lab3_top (
         .row_idx(row_idx),
         .col_sync(col_sync),
         .key_detected(key_detected),
-        .ghosting_detected(ghosting_detected),
 		.scan_stop(scan_stop)
     );
     
@@ -100,10 +97,8 @@ module lab3_top (
         .rst_n(reset),
         .key_code(raw_key_code),
         .key_detected(key_detected),
-        .ghosting_detected(ghosting_detected),
         .key_valid(key_valid),
         .debounced_key(debounced_key),
-        .held_key_code(held_key_code),
 		.scan_stop(scan_stop)
     );
     
