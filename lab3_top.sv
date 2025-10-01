@@ -32,7 +32,13 @@ module lab3_top (
     logic [3:0]  debounced_key;        // Debounced key code from debouncer
     logic [3:0]  digit_left;           // Left display digit
     logic [3:0]  digit_right;          // Right display digit
-	logic scan_stop;
+    logic        scan_stop;            // Scan stop signal from debouncer
+    
+    // Enhanced debouncer outputs for multi-key support
+    logic        key_held;             // Signal that a key is currently held
+    logic [3:0]  held_key_code;        // The code of the held key
+    logic        flash_enable;         // Enable flashing behavior
+    logic        combo_ready;          // Ready for key combination detection
 
     // ========================================================================
     // CLOCK GENERATION
@@ -99,7 +105,11 @@ module lab3_top (
         .key_detected(key_detected),
         .key_valid(key_valid),
         .debounced_key(debounced_key),
-		.scan_stop(scan_stop)
+        .scan_stop(scan_stop),
+        .key_held(key_held),
+        .held_key_code(held_key_code),
+        .flash_enable(flash_enable),
+        .combo_ready(combo_ready)
     );
     
     // ========================================================================
