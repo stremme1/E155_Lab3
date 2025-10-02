@@ -1,12 +1,9 @@
 // ============================================================================
-// KEYPAD DEBOUNCER MODULE
+// FIXED KEYPAD DEBOUNCER MODULE
 // ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
-// Lab3 Keypad Debouncer - Switch Debouncing Logic
-// This module implements a 2-state debouncer to eliminate switch bouncing
-// and ensure each key press is registered only once. Features 20ms debounce
-// period and proper state machine implementation.
+// Fixed keypad debouncer with proper key hold behavior
 // ============================================================================
 
 module keypad_debouncer (
@@ -19,9 +16,7 @@ module keypad_debouncer (
 	output logic 		scan_stop
 );
 
-    // ========================================================================
-    // ENHANCED 3-STATE DEBOUNCER WITH MULTIPLE KEY PROTECTION
-    // ========================================================================
+    // State machine
     typedef enum logic [1:0] {
         IDLE,           // No key pressed
         DEBOUNCING,     // Key pressed, debouncing
@@ -36,9 +31,7 @@ module keypad_debouncer (
     
     localparam int DEBOUNCE_MAX = 20'd59999; // ~20ms @ 3MHz
 
-    // ========================================================================
-    // DEBOUNCER FSM
-    // ========================================================================
+    // State machine
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             current_state <= IDLE;
@@ -47,34 +40,30 @@ module keypad_debouncer (
         end else begin
             case (current_state)
                 IDLE: begin
-                    // Check for valid key press - only process single valid keys
                     if (key_detected && key_code != 4'b0000) begin
                         current_state <= DEBOUNCING;
                         l_key <= key_code;
                         debounce_cnt <= 20'd0;
                     end
-                    // Multi-key scenarios (key_code == 4'b0000) are ignored automatically
                 end
                 
                 DEBOUNCING: begin
-                    if (!key_detected || key_code == 4'b0000) begin
-                        // Key released or invalid, go back to IDLE
+                    if (!key_detected) begin
                         current_state <= IDLE;
                     end else if (debounce_cnt >= DEBOUNCE_MAX) begin
-                        // Debounce complete, move to KEY_HELD state
                         current_state <= KEY_HELD;
                     end else begin
-                        // Continue debouncing
                         debounce_cnt <= debounce_cnt + 1;
+                        if (debounce_cnt % 10000 == 0) begin
+                            $display("Debouncer: debounce_cnt=%0d, DEBOUNCE_MAX=%0d", debounce_cnt, DEBOUNCE_MAX);
+                        end
                     end
                 end
                 
                 KEY_HELD: begin
-                    if (!key_detected || key_code == 4'b0000) begin
-                        // Key released, go back to IDLE
+                    if (!key_detected) begin
                         current_state <= IDLE;
                     end
-                    // Stay in KEY_HELD state while key is pressed, ignore additional key presses
                 end
                 
                 default: begin
@@ -84,9 +73,7 @@ module keypad_debouncer (
         end
     end
 
-    // ========================================================================
-    // OUTPUT ASSIGNMENTS
-    // ========================================================================
+    // Output logic
     always_comb begin
         case (current_state)
             IDLE: begin
@@ -108,8 +95,8 @@ module keypad_debouncer (
             
             KEY_HELD: begin
                 scan_stop = 1'b1;
-                key_valid = 1'b0;  // No new key valid while key is held
-                debounced_key = 4'b0000;  // Don't output key code while held
+                key_valid = 1'b0;
+                debounced_key = 4'b0000;
             end
             
             default: begin
@@ -119,6 +106,5 @@ module keypad_debouncer (
             end
         endcase
     end
-
 
 endmodule
