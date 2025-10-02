@@ -97,6 +97,7 @@ module lab3_top (
         .rst_n(reset),
         .key_code(raw_key_code),
         .key_detected(key_detected),
+        .col_sync(col_sync),          // NEW: pass column sync data
         .key_valid(key_valid),
         .debounced_key(debounced_key),
 		.scan_stop(scan_stop)

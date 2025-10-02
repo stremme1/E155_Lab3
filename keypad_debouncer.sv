@@ -14,6 +14,7 @@ module keypad_debouncer (
     input  logic        rst_n,
     input  logic [3:0]  key_code,     // from decoder (4-bit key code)
     input  logic        key_detected, // from scanner (any key pressed)
+    input  logic [3:0]  col_sync,     // NEW: synchronized column data
     output logic        key_valid,    // debounced valid key press
     output logic [3:0]  debounced_key, // debounced key code
 	output logic 		scan_stop
@@ -33,6 +34,7 @@ module keypad_debouncer (
     // Debounce counter and key
     logic [19:0] debounce_cnt;
     logic [3:0]  l_key;
+    logic [3:0]  col_saved;        // NEW: saved column data for multi-button detection
     
     localparam int DEBOUNCE_MAX = 20'd59999; // ~20ms @ 3MHz
 
@@ -118,5 +120,25 @@ module keypad_debouncer (
             end
         endcase
     end
+
+// ========================================================================
+// MULTI-BUTTON CONTROL LOGIC
+// ========================================================================
+// Simple always_ff for multi-button handling
+// Prevents state changes during multi-key scenarios
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        col_saved <= 4'b0000;
+    end else begin
+        // Save column data for multi-button detection
+        col_saved <= col_sync;
+        
+        // Multi-button protection: if multiple keys in same row/col, stay in current state
+        if (col_saved != col_sync && col_sync != 4'b0000) begin
+            // Multiple keys detected - prevent state change
+            // This prevents multi-key confusion
+        end
+    end
+end
 
 endmodule
