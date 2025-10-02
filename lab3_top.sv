@@ -72,10 +72,10 @@ module lab3_top (
     // Convert synchronized column data to one-hot format for decoder
     always_comb begin
         case (col_sync)
-            4'b1110: col_onehot = 4'b0001;  // Column 0 pressed
-            4'b1101: col_onehot = 4'b0010;  // Column 1 pressed
-            4'b1011: col_onehot = 4'b0100;  // Column 2 pressed
-            4'b0111: col_onehot = 4'b1000;  // Column 3 pressed
+            4'b0001: col_onehot = 4'b0001;  // Column 0 pressed
+            4'b0010: col_onehot = 4'b0010;  // Column 1 pressed
+            4'b0100: col_onehot = 4'b0100;  // Column 2 pressed
+            4'b1000: col_onehot = 4'b1000;  // Column 3 pressed
             default: col_onehot = 4'b0000;  // No key or multiple keys
         endcase
     end
@@ -99,7 +99,9 @@ module lab3_top (
         .key_detected(key_detected),
         .key_valid(key_valid),
         .debounced_key(debounced_key),
-		.scan_stop(scan_stop)
+		.scan_stop(scan_stop),
+		// new
+		.col(col_sync)
     );
     
     // ========================================================================
