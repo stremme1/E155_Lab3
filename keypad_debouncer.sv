@@ -49,12 +49,14 @@ module keypad_debouncer (
         end else begin
             case (current_state)
                 IDLE: begin
-                    // Check for valid key press (ghosting protection: only single keys)
-                    if (key_detected && key_code != 4'b0000) begin
+                    // Check for valid key press - only process single valid keys
+                    // Ignore if multi-button detected
+                    if (key_detected && key_code != 4'b0000 && !multi_button_detected) begin
                         current_state <= DEBOUNCING;
                         l_key <= key_code;
                         debounce_cnt <= 20'd0;
                     end
+                    // Multi-key scenarios are ignored automatically
                 end
                 
                 DEBOUNCING: begin
@@ -124,21 +126,17 @@ module keypad_debouncer (
 // ========================================================================
 // MULTI-BUTTON CONTROL LOGIC
 // ========================================================================
-// Simple always_ff for multi-button handling
-// Prevents state changes during multi-key scenarios
+// Track column changes to detect multi-button scenarios
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         col_saved <= 4'b0000;
     end else begin
-        // Save column data for multi-button detection
         col_saved <= col_sync;
-        
-        // Multi-button protection: if multiple keys in same row/col, stay in current state
-        if (col_saved != col_sync && col_sync != 4'b0000) begin
-            // Multiple keys detected - prevent state change
-            // This prevents multi-key confusion
-        end
     end
 end
+
+// Multi-button detection signal
+logic multi_button_detected;
+assign multi_button_detected = (col_saved != col_sync) && (col_sync != 4'b0000);
 
 endmodule
