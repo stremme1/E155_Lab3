@@ -40,17 +40,17 @@ module lab3_top (
     
     // HARDWARE CLOCK - HSOSC (ACTIVE FOR HARDWARE)
     // CLKHF_DIV(2'b11) = divide by 16 to get 3MHz from 48MHz
-    HSOSC #(.CLKHF_DIV(2'b11)) hf_osc (
-        .CLKHFPU(1'b1), 
-        .CLKHFEN(1'b1), 
-        .CLKHF(clk)
-    );
+    // HSOSC #(.CLKHF_DIV(2'b11)) hf_osc (
+    //     .CLKHFPU(1'b1), 
+    //     .CLKHFEN(1'b1), 
+    //     .CLKHF(clk)
+    // );
     
     // SIMULATION CLOCK - UNCOMMENT FOR SIMULATION
-    // initial begin
-    //     clk = 0;
-    //     forever #166.67 clk = ~clk; // 3MHz clock (333.33ns period)
-    // end
+    initial begin
+        clk = 0;
+        forever #166.67 clk = ~clk; // 3MHz clock (333.33ns period)
+    end
 
     // ========================================================================
     // KEYPAD SCANNER
