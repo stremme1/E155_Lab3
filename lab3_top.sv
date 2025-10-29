@@ -70,12 +70,13 @@ module lab3_top (
     // COLUMN CONVERSION: Raw to One-Hot
     // ========================================================================
     // Convert synchronized column data to one-hot format for decoder
+    // Note: Keypad uses active-low logic, so 0 means pressed
     always_comb begin
         case (col_sync)
-            4'b0001: col_onehot = 4'b0001;  // Column 0 pressed
-            4'b0010: col_onehot = 4'b0010;  // Column 1 pressed
-            4'b0100: col_onehot = 4'b0100;  // Column 2 pressed
-            4'b1000: col_onehot = 4'b1000;  // Column 3 pressed
+            4'b1110: col_onehot = 4'b0001;  // Column 0 pressed (active-low)
+            4'b1101: col_onehot = 4'b0010;  // Column 1 pressed (active-low)
+            4'b1011: col_onehot = 4'b0100;  // Column 2 pressed (active-low)
+            4'b0111: col_onehot = 4'b1000;  // Column 3 pressed (active-low)
             default: col_onehot = 4'b0000;  // No key or multiple keys
         endcase
     end
