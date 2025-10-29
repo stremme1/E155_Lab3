@@ -49,7 +49,7 @@ module lab3_top (
     // SIMULATION CLOCK - UNCOMMENT FOR SIMULATION
     initial begin
         clk = 0;
-        forever #50 clk = ~clk; // 10MHz clock (100ns period) for better Questa visibility
+        forever #10000 clk = ~clk; // 50kHz clock (20us period) - MUCH SLOWER for Questa
     end
 
     // ========================================================================

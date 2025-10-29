@@ -1,21 +1,14 @@
 // ============================================================================
-// KEYPAD DEBOUNCER TEST BENCH - STATE WALKTHROUGH VERSION
+// KEYPAD DEBOUNCER TEST BENCH - SHOW MODULE STATE CHANGES
 // ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
-// Test bench that walks through debouncer states over time with clock changes
-// Shows actual state transitions and debouncing behavior
+// Testbench that shows actual module state changes in waveforms
 // ============================================================================
 
-`timescale 1ns/1ps
 
 module tb_debouncer_debug;
 
-    // ========================================================================
-    // PARAMETERS AND SIGNALS
-    // ========================================================================
-    parameter CLK_PERIOD = 333.33; // 3MHz clock (333.33ns period)
-    
     // Clock and reset
     logic        clk;
     logic        rst_n;
@@ -29,9 +22,6 @@ module tb_debouncer_debug;
     logic        key_valid;
     logic [3:0]  debounced_key;
     logic        scan_stop;
-    
-    // Test control
-    integer      cycle_count;
     
     // ========================================================================
     // INSTANTIATE DUT
@@ -48,226 +38,297 @@ module tb_debouncer_debug;
     );
     
     // ========================================================================
-    // CLOCK GENERATION
+    // CLOCK GENERATION - VERY SLOW FOR QUESTA
     // ========================================================================
     initial begin
         clk = 0;
-        forever #(CLK_PERIOD/2) clk = ~clk;
+        forever #1000 clk = ~clk; // 500kHz clock (2us period) - SLOW ENOUGH TO SEE
     end
     
     // ========================================================================
-    // DISPLAY FUNCTIONS
+    // WAVEFORM DUMPING - SHOW ALL INTERNAL SIGNALS
     // ========================================================================
-    function string get_state_name(input [1:0] state);
-        case (state)
-            2'b00: return "IDLE";
-            2'b01: return "DEBOUNCING";
-            2'b10: return "KEY_HELD";
-            default: return "UNKNOWN";
-        endcase
-    endfunction
-    
-    function string get_key_name(input [3:0] key);
-        case (key)
-            4'h0: return "0";
-            4'h1: return "1";
-            4'h2: return "2";
-            4'h3: return "3";
-            4'h4: return "4";
-            4'h5: return "5";
-            4'h6: return "6";
-            4'h7: return "7";
-            4'h8: return "8";
-            4'h9: return "9";
-            4'hA: return "A";
-            4'hB: return "B";
-            4'hC: return "C";
-            4'hD: return "D";
-            4'hE: return "E";
-            4'hF: return "F";
-            default: return "?";
-        endcase
-    endfunction
-    
-    task display_state();
-        $display("[%0t] CLK=%b RST=%b KEY_CODE=%s COL=%b KEY_DET=%b KEY_VAL=%b DEB_KEY=%s SCAN_STOP=%b STATE=%s COUNT=%0d", 
-                 $time, clk, rst_n, get_key_name(key_code), col, key_detected, key_valid, 
-                 get_key_name(debounced_key), scan_stop, get_state_name(dut.current_state), dut.debounce_cnt);
-    endtask
+    initial begin
+        $dumpfile("tb_debouncer_debug.vcd");
+        $dumpvars(0, tb_debouncer_debug);
+        // Also dump internal debouncer signals
+        $dumpvars(0, dut.current_state);
+        $dumpvars(0, dut.debounce_cnt);
+    end
     
     // ========================================================================
-    // TEST STIMULUS
+    // TEST STIMULUS - SHOW STATE CHANGES
     // ========================================================================
     initial begin
         $display("==========================================");
-        $display("DEBOUNCER STATE WALKTHROUGH TEST");
+        $display("DEBOUNCER TEST - SHOWING MODULE STATE CHANGES");
         $display("==========================================");
         
-        // Initialize signals
+        // Initialize
         rst_n = 0;
         key_code = 4'h0;
         col = 4'b1111;
         key_detected = 0;
-        cycle_count = 0;
-        
-        $display("\n[%0t] Starting test - will show state transitions over time", $time);
-        $display("Format: [TIME] CLK RST KEY_CODE COL KEY_DET KEY_VAL DEB_KEY SCAN_STOP STATE COUNT");
-        $display("-------------------------------------------------------------------------------");
         
         // Reset sequence
-        $display("\n--- RESET SEQUENCE ---");
-        for (cycle_count = 0; cycle_count < 5; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
-        
-        // Release reset
+        repeat(5) @(posedge clk);
         rst_n = 1;
-        $display("\n[%0t] Reset released - debouncer should be in IDLE", $time);
+        repeat(5) @(posedge clk);
         
-        // Test 1: Normal idle operation
-        $display("\n--- TEST 1: IDLE STATE (NO KEYS) ---");
+        $display("Reset complete - debouncer should be in IDLE state");
+        
+        // Test 1: No input - should stay in IDLE
+        $display("Test 1: No input - should stay in IDLE state");
         key_code = 4'h0;
         col = 4'b1111;
         key_detected = 0;
+        repeat(20) @(posedge clk);
         
-        for (cycle_count = 0; cycle_count < 10; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
-        
-        // Test 2: Key press - should enter DEBOUNCING
-        $display("\n--- TEST 2: KEY PRESS - ENTER DEBOUNCING STATE ---");
-        $display("[%0t] Pressing key '1' - should enter DEBOUNCING", $time);
+        // Test 2: Key detected - should go to DEBOUNCING
+        $display("Test 2: Key detected - should go IDLE->DEBOUNCING->KEY_HELD");
         key_code = 4'h1;
         col = 4'b1110;
         key_detected = 1;
+        repeat(100) @(posedge clk); // Hold for many cycles to see debounce
         
-        // Show debouncing process (but not full 20ms)
-        for (cycle_count = 0; cycle_count < 50; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
-        
-        // Test 3: Key release during debouncing
-        $display("\n--- TEST 3: KEY RELEASE DURING DEBOUNCING ---");
-        $display("[%0t] Releasing key during debouncing - should return to IDLE", $time);
+        // Test 3: Key released - should go back to IDLE
+        $display("Test 3: Key released - should go back to IDLE");
         key_code = 4'h0;
         col = 4'b1111;
         key_detected = 0;
+        repeat(20) @(posedge clk);
         
-        for (cycle_count = 0; cycle_count < 10; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
-        
-        // Test 4: Complete debounce cycle
-        $display("\n--- TEST 4: COMPLETE DEBOUNCE CYCLE ---");
-        $display("[%0t] Pressing key '5' - will show full debounce process", $time);
-        key_code = 4'h5;
-        col = 4'b1101;
-        key_detected = 1;
-        
-        // Show debouncing with progress
-        for (cycle_count = 0; cycle_count < 100; cycle_count++) begin
-            @(posedge clk);
-            if (cycle_count % 20 == 0) display_state(); // Show every 20th cycle
-        end
-        
-        // Test 5: Key held - should enter KEY_HELD state
-        $display("\n--- TEST 5: KEY HELD - ENTER KEY_HELD STATE ---");
-        $display("[%0t] Key held - should enter KEY_HELD state", $time);
-        
-        for (cycle_count = 0; cycle_count < 20; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
-        
-        // Test 6: Key release from KEY_HELD
-        $display("\n--- TEST 6: KEY RELEASE FROM KEY_HELD ---");
-        $display("[%0t] Releasing key from KEY_HELD - should return to IDLE", $time);
-        key_code = 4'h0;
-        col = 4'b1111;
-        key_detected = 0;
-        
-        for (cycle_count = 0; cycle_count < 10; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
-        
-        // Test 7: Multiple key sequence
-        $display("\n--- TEST 7: MULTIPLE KEY SEQUENCE ---");
-        
-        // Key '2'
-        $display("[%0t] Pressing key '2'", $time);
+        // Test 4: Key 2 detected - should go to DEBOUNCING
+        $display("Test 4: Key 2 detected - should go IDLE->DEBOUNCING->KEY_HELD");
         key_code = 4'h2;
         col = 4'b1101;
         key_detected = 1;
+        repeat(100) @(posedge clk);
         
-        for (cycle_count = 0; cycle_count < 30; cycle_count++) begin
-            @(posedge clk);
-            if (cycle_count % 10 == 0) display_state();
-        end
-        
-        // Release
-        $display("[%0t] Releasing key '2'", $time);
+        // Test 5: Key released - should go back to IDLE
+        $display("Test 5: Key released - should go back to IDLE");
         key_code = 4'h0;
         col = 4'b1111;
         key_detected = 0;
+        repeat(20) @(posedge clk);
         
-        for (cycle_count = 0; cycle_count < 5; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
-        
-        // Key '8'
-        $display("[%0t] Pressing key '8'", $time);
-        key_code = 4'h8;
+        // Test 6: Key 3 detected - should go to DEBOUNCING
+        $display("Test 6: Key 3 detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'h3;
         col = 4'b1011;
         key_detected = 1;
+        repeat(100) @(posedge clk);
         
-        for (cycle_count = 0; cycle_count < 30; cycle_count++) begin
-            @(posedge clk);
-            if (cycle_count % 10 == 0) display_state();
-        end
-        
-        // Release
-        $display("[%0t] Releasing key '8'", $time);
+        // Test 7: Key released - should go back to IDLE
+        $display("Test 7: Key released - should go back to IDLE");
         key_code = 4'h0;
         col = 4'b1111;
         key_detected = 0;
+        repeat(20) @(posedge clk);
         
-        for (cycle_count = 0; cycle_count < 5; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
+        // Test 8: Key C detected - should go to DEBOUNCING
+        $display("Test 8: Key C detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'hC;
+        col = 4'b0111;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
         
-        // Test 8: Invalid key code
-        $display("\n--- TEST 8: INVALID KEY CODE ---");
-        $display("[%0t] Testing invalid key code (0x0) with key_detected=1", $time);
+        // Test 9: Key released - should go back to IDLE
+        $display("Test 9: Key released - should go back to IDLE");
         key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 10: Key 4 detected - should go to DEBOUNCING
+        $display("Test 10: Key 4 detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'h4;
         col = 4'b1110;
         key_detected = 1;
+        repeat(100) @(posedge clk);
         
-        for (cycle_count = 0; cycle_count < 10; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
-        
-        // Final idle
-        $display("\n--- FINAL IDLE STATE ---");
+        // Test 11: Key released - should go back to IDLE
+        $display("Test 11: Key released - should go back to IDLE");
         key_code = 4'h0;
         col = 4'b1111;
         key_detected = 0;
+        repeat(20) @(posedge clk);
         
-        for (cycle_count = 0; cycle_count < 5; cycle_count++) begin
-            @(posedge clk);
-            display_state();
-        end
+        // Test 12: Key 5 detected - should go to DEBOUNCING
+        $display("Test 12: Key 5 detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'h5;
+        col = 4'b1101;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
         
-        $display("\n==========================================");
-        $display("DEBOUNCER STATE WALKTHROUGH COMPLETE");
-        $display("==========================================");
+        // Test 13: Key released - should go back to IDLE
+        $display("Test 13: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 14: Key 6 detected - should go to DEBOUNCING
+        $display("Test 14: Key 6 detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'h6;
+        col = 4'b1011;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 15: Key released - should go back to IDLE
+        $display("Test 15: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 16: Key D detected - should go to DEBOUNCING
+        $display("Test 16: Key D detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'hD;
+        col = 4'b0111;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 17: Key released - should go back to IDLE
+        $display("Test 17: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 18: Key 7 detected - should go to DEBOUNCING
+        $display("Test 18: Key 7 detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'h7;
+        col = 4'b1110;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 19: Key released - should go back to IDLE
+        $display("Test 19: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 20: Key 8 detected - should go to DEBOUNCING
+        $display("Test 20: Key 8 detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'h8;
+        col = 4'b1101;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 21: Key released - should go back to IDLE
+        $display("Test 21: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 22: Key 9 detected - should go to DEBOUNCING
+        $display("Test 22: Key 9 detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'h9;
+        col = 4'b1011;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 23: Key released - should go back to IDLE
+        $display("Test 23: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 24: Key E detected - should go to DEBOUNCING
+        $display("Test 24: Key E detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'hE;
+        col = 4'b0111;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 25: Key released - should go back to IDLE
+        $display("Test 25: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 26: Key A detected - should go to DEBOUNCING
+        $display("Test 26: Key A detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'hA;
+        col = 4'b1110;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 27: Key released - should go back to IDLE
+        $display("Test 27: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 28: Key 0 detected - should go to DEBOUNCING
+        $display("Test 28: Key 0 detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'h0;
+        col = 4'b1101;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 29: Key released - should go back to IDLE
+        $display("Test 29: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 30: Key B detected - should go to DEBOUNCING
+        $display("Test 30: Key B detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'hB;
+        col = 4'b1011;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 31: Key released - should go back to IDLE
+        $display("Test 31: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 32: Key F detected - should go to DEBOUNCING
+        $display("Test 32: Key F detected - should go IDLE->DEBOUNCING->KEY_HELD");
+        key_code = 4'hF;
+        col = 4'b0111;
+        key_detected = 1;
+        repeat(100) @(posedge clk);
+        
+        // Test 33: Key released - should go back to IDLE
+        $display("Test 33: Key released - should go back to IDLE");
+        key_code = 4'h0;
+        col = 4'b1111;
+        key_detected = 0;
+        repeat(20) @(posedge clk);
+        
+        // Test 34: Rapid key changes - watch state changes
+        $display("Test 34: Rapid key changes - watch state changes");
+        key_code = 4'h1; col = 4'b1110; key_detected = 1; repeat(10) @(posedge clk); // Key 1
+        key_code = 4'h2; col = 4'b1101; key_detected = 1; repeat(10) @(posedge clk); // Key 2
+        key_code = 4'h3; col = 4'b1011; key_detected = 1; repeat(10) @(posedge clk); // Key 3
+        key_code = 4'hC; col = 4'b0111; key_detected = 1; repeat(10) @(posedge clk); // Key C
+        key_code = 4'h4; col = 4'b1110; key_detected = 1; repeat(10) @(posedge clk); // Key 4
+        key_code = 4'h5; col = 4'b1101; key_detected = 1; repeat(10) @(posedge clk); // Key 5
+        key_code = 4'h6; col = 4'b1011; key_detected = 1; repeat(10) @(posedge clk); // Key 6
+        key_code = 4'hD; col = 4'b0111; key_detected = 1; repeat(10) @(posedge clk); // Key D
+        key_code = 4'h7; col = 4'b1110; key_detected = 1; repeat(10) @(posedge clk); // Key 7
+        key_code = 4'h8; col = 4'b1101; key_detected = 1; repeat(10) @(posedge clk); // Key 8
+        key_code = 4'h9; col = 4'b1011; key_detected = 1; repeat(10) @(posedge clk); // Key 9
+        key_code = 4'hE; col = 4'b0111; key_detected = 1; repeat(10) @(posedge clk); // Key E
+        key_code = 4'hA; col = 4'b1110; key_detected = 1; repeat(10) @(posedge clk); // Key A
+        key_code = 4'h0; col = 4'b1101; key_detected = 1; repeat(10) @(posedge clk); // Key 0
+        key_code = 4'hB; col = 4'b1011; key_detected = 1; repeat(10) @(posedge clk); // Key B
+        key_code = 4'hF; col = 4'b0111; key_detected = 1; repeat(10) @(posedge clk); // Key F
+        key_code = 4'h0; col = 4'b1111; key_detected = 0; repeat(20) @(posedge clk); // Release all
+        
+        $display("Test complete! Check the VCD file for waveforms.");
         $finish;
     end
 

@@ -1,12 +1,11 @@
 // ============================================================================
-// KEYPAD DECODER TEST BENCH - SIMPLE INPUT CHANGES
+// KEYPAD DECODER TEST BENCH - SHOW MODULE STATE CHANGES
 // ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
-// Simple testbench that changes inputs over time for Questa debugging
+// Testbench that shows actual module state changes in waveforms
 // ============================================================================
 
-`timescale 1ns/1ps
 
 module tb_decoder_debug;
 
@@ -30,19 +29,29 @@ module tb_decoder_debug;
     );
     
     // ========================================================================
-    // CLOCK GENERATION
+    // CLOCK GENERATION - VERY SLOW FOR QUESTA
     // ========================================================================
     initial begin
         clk = 0;
-        forever #50 clk = ~clk; // 10MHz clock
+        forever #1000 clk = ~clk; // 500kHz clock (2us period) - SLOW ENOUGH TO SEE
     end
     
     // ========================================================================
-    // TEST STIMULUS - SIMPLE INPUT CHANGES
+    // WAVEFORM DUMPING - SHOW ALL INTERNAL SIGNALS
+    // ========================================================================
+    initial begin
+        $dumpfile("tb_decoder_debug.vcd");
+        $dumpvars(0, tb_decoder_debug);
+        // Also dump internal decoder signals
+        $dumpvars(0, dut);
+    end
+    
+    // ========================================================================
+    // TEST STIMULUS - SHOW STATE CHANGES
     // ========================================================================
     initial begin
         $display("==========================================");
-        $display("DECODER TEST - SIMPLE INPUT CHANGES");
+        $display("DECODER TEST - SHOWING MODULE STATE CHANGES");
         $display("==========================================");
         
         // Initialize
@@ -52,71 +61,71 @@ module tb_decoder_debug;
         $display("Starting input changes...");
         
         // Test 1: No input
-        $display("Test 1: No input");
+        $display("Test 1: No input - should see key_code=0x0");
         row_onehot = 4'b0000;
         col_onehot = 4'b0000;
-        #1000;
+        repeat(10) @(posedge clk);
         
-        // Test 2: Row 0 keys
-        $display("Test 2: Row 0 keys");
-        row_onehot = 4'b0001; col_onehot = 4'b0001; #500; // Key 1
-        row_onehot = 4'b0001; col_onehot = 4'b0010; #500; // Key 2
-        row_onehot = 4'b0001; col_onehot = 4'b0100; #500; // Key 3
-        row_onehot = 4'b0001; col_onehot = 4'b1000; #500; // Key C
+        // Test 2: Row 0 keys - should see key_code change
+        $display("Test 2: Row 0 keys - watch key_code change");
+        row_onehot = 4'b0001; col_onehot = 4'b0001; repeat(10) @(posedge clk); // Key 1
+        row_onehot = 4'b0001; col_onehot = 4'b0010; repeat(10) @(posedge clk); // Key 2
+        row_onehot = 4'b0001; col_onehot = 4'b0100; repeat(10) @(posedge clk); // Key 3
+        row_onehot = 4'b0001; col_onehot = 4'b1000; repeat(10) @(posedge clk); // Key C
         
-        // Test 3: Row 1 keys
-        $display("Test 3: Row 1 keys");
-        row_onehot = 4'b0010; col_onehot = 4'b0001; #500; // Key 4
-        row_onehot = 4'b0010; col_onehot = 4'b0010; #500; // Key 5
-        row_onehot = 4'b0010; col_onehot = 4'b0100; #500; // Key 6
-        row_onehot = 4'b0010; col_onehot = 4'b1000; #500; // Key D
+        // Test 3: Row 1 keys - should see key_code change
+        $display("Test 3: Row 1 keys - watch key_code change");
+        row_onehot = 4'b0010; col_onehot = 4'b0001; repeat(10) @(posedge clk); // Key 4
+        row_onehot = 4'b0010; col_onehot = 4'b0010; repeat(10) @(posedge clk); // Key 5
+        row_onehot = 4'b0010; col_onehot = 4'b0100; repeat(10) @(posedge clk); // Key 6
+        row_onehot = 4'b0010; col_onehot = 4'b1000; repeat(10) @(posedge clk); // Key D
         
-        // Test 4: Row 2 keys
-        $display("Test 4: Row 2 keys");
-        row_onehot = 4'b0100; col_onehot = 4'b0001; #500; // Key 7
-        row_onehot = 4'b0100; col_onehot = 4'b0010; #500; // Key 8
-        row_onehot = 4'b0100; col_onehot = 4'b0100; #500; // Key 9
-        row_onehot = 4'b0100; col_onehot = 4'b1000; #500; // Key E
+        // Test 4: Row 2 keys - should see key_code change
+        $display("Test 4: Row 2 keys - watch key_code change");
+        row_onehot = 4'b0100; col_onehot = 4'b0001; repeat(10) @(posedge clk); // Key 7
+        row_onehot = 4'b0100; col_onehot = 4'b0010; repeat(10) @(posedge clk); // Key 8
+        row_onehot = 4'b0100; col_onehot = 4'b0100; repeat(10) @(posedge clk); // Key 9
+        row_onehot = 4'b0100; col_onehot = 4'b1000; repeat(10) @(posedge clk); // Key E
         
-        // Test 5: Row 3 keys
-        $display("Test 5: Row 3 keys");
-        row_onehot = 4'b1000; col_onehot = 4'b0001; #500; // Key A
-        row_onehot = 4'b1000; col_onehot = 4'b0010; #500; // Key 0
-        row_onehot = 4'b1000; col_onehot = 4'b0100; #500; // Key B
-        row_onehot = 4'b1000; col_onehot = 4'b1000; #500; // Key F
+        // Test 5: Row 3 keys - should see key_code change
+        $display("Test 5: Row 3 keys - watch key_code change");
+        row_onehot = 4'b1000; col_onehot = 4'b0001; repeat(10) @(posedge clk); // Key A
+        row_onehot = 4'b1000; col_onehot = 4'b0010; repeat(10) @(posedge clk); // Key 0
+        row_onehot = 4'b1000; col_onehot = 4'b0100; repeat(10) @(posedge clk); // Key B
+        row_onehot = 4'b1000; col_onehot = 4'b1000; repeat(10) @(posedge clk); // Key F
         
-        // Test 6: Invalid combinations
-        $display("Test 6: Invalid combinations");
-        row_onehot = 4'b0000; col_onehot = 4'b0000; #500; // No input
-        row_onehot = 4'b0011; col_onehot = 4'b0001; #500; // Multiple rows
-        row_onehot = 4'b0001; col_onehot = 4'b0011; #500; // Multiple columns
+        // Test 6: Invalid combinations - should see key_code=0x0
+        $display("Test 6: Invalid combinations - should see key_code=0x0");
+        row_onehot = 4'b0000; col_onehot = 4'b0000; repeat(10) @(posedge clk); // No input
+        row_onehot = 4'b0011; col_onehot = 4'b0001; repeat(10) @(posedge clk); // Multiple rows
+        row_onehot = 4'b0001; col_onehot = 4'b0011; repeat(10) @(posedge clk); // Multiple columns
         
-        // Test 7: Rapid changes
-        $display("Test 7: Rapid changes");
-        row_onehot = 4'b0001; col_onehot = 4'b0001; #100; // Key 1
-        row_onehot = 4'b0001; col_onehot = 4'b0010; #100; // Key 2
-        row_onehot = 4'b0001; col_onehot = 4'b0100; #100; // Key 3
-        row_onehot = 4'b0001; col_onehot = 4'b1000; #100; // Key C
-        row_onehot = 4'b0010; col_onehot = 4'b0001; #100; // Key 4
-        row_onehot = 4'b0010; col_onehot = 4'b0010; #100; // Key 5
-        row_onehot = 4'b0010; col_onehot = 4'b0100; #100; // Key 6
-        row_onehot = 4'b0010; col_onehot = 4'b1000; #100; // Key D
-        row_onehot = 4'b0100; col_onehot = 4'b0001; #100; // Key 7
-        row_onehot = 4'b0100; col_onehot = 4'b0010; #100; // Key 8
-        row_onehot = 4'b0100; col_onehot = 4'b0100; #100; // Key 9
-        row_onehot = 4'b0100; col_onehot = 4'b1000; #100; // Key E
-        row_onehot = 4'b1000; col_onehot = 4'b0001; #100; // Key A
-        row_onehot = 4'b1000; col_onehot = 4'b0010; #100; // Key 0
-        row_onehot = 4'b1000; col_onehot = 4'b0100; #100; // Key B
-        row_onehot = 4'b1000; col_onehot = 4'b1000; #100; // Key F
+        // Test 7: Rapid changes - watch key_code change quickly
+        $display("Test 7: Rapid changes - watch key_code change quickly");
+        row_onehot = 4'b0001; col_onehot = 4'b0001; repeat(5) @(posedge clk); // Key 1
+        row_onehot = 4'b0001; col_onehot = 4'b0010; repeat(5) @(posedge clk); // Key 2
+        row_onehot = 4'b0001; col_onehot = 4'b0100; repeat(5) @(posedge clk); // Key 3
+        row_onehot = 4'b0001; col_onehot = 4'b1000; repeat(5) @(posedge clk); // Key C
+        row_onehot = 4'b0010; col_onehot = 4'b0001; repeat(5) @(posedge clk); // Key 4
+        row_onehot = 4'b0010; col_onehot = 4'b0010; repeat(5) @(posedge clk); // Key 5
+        row_onehot = 4'b0010; col_onehot = 4'b0100; repeat(5) @(posedge clk); // Key 6
+        row_onehot = 4'b0010; col_onehot = 4'b1000; repeat(5) @(posedge clk); // Key D
+        row_onehot = 4'b0100; col_onehot = 4'b0001; repeat(5) @(posedge clk); // Key 7
+        row_onehot = 4'b0100; col_onehot = 4'b0010; repeat(5) @(posedge clk); // Key 8
+        row_onehot = 4'b0100; col_onehot = 4'b0100; repeat(5) @(posedge clk); // Key 9
+        row_onehot = 4'b0100; col_onehot = 4'b1000; repeat(5) @(posedge clk); // Key E
+        row_onehot = 4'b1000; col_onehot = 4'b0001; repeat(5) @(posedge clk); // Key A
+        row_onehot = 4'b1000; col_onehot = 4'b0010; repeat(5) @(posedge clk); // Key 0
+        row_onehot = 4'b1000; col_onehot = 4'b0100; repeat(5) @(posedge clk); // Key B
+        row_onehot = 4'b1000; col_onehot = 4'b1000; repeat(5) @(posedge clk); // Key F
         
         // Test 8: Final state
-        $display("Test 8: Final state");
+        $display("Test 8: Final state - should see key_code=0x0");
         row_onehot = 4'b0000;
         col_onehot = 4'b0000;
-        #1000;
+        repeat(10) @(posedge clk);
         
-        $display("Test complete!");
+        $display("Test complete! Check the VCD file for waveforms.");
         $finish;
     end
 

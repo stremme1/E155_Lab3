@@ -1,12 +1,11 @@
 // ============================================================================
-// LAB3 TOP MODULE TEST BENCH - SIMPLE INPUT CHANGES
+// LAB3 TOP MODULE TEST BENCH - SHOW MODULE STATE CHANGES
 // ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
-// Simple testbench that changes inputs over time for Questa debugging
+// Testbench that shows actual module state changes in waveforms
 // ============================================================================
 
-`timescale 1ns/1ps
 
 module tb_top_debug;
 
@@ -33,11 +32,25 @@ module tb_top_debug;
     );
     
     // ========================================================================
-    // TEST STIMULUS - SIMPLE INPUT CHANGES
+    // WAVEFORM DUMPING - SHOW ALL INTERNAL SIGNALS
+    // ========================================================================
+    initial begin
+        $dumpfile("tb_top_debug.vcd");
+        $dumpvars(0, tb_top_debug);
+        // Also dump internal signals from all modules
+        $dumpvars(0, dut.scanner_inst.current_state);
+        $dumpvars(0, dut.scanner_inst.scan_counter);
+        $dumpvars(0, dut.scanner_inst.scan_timeout);
+        $dumpvars(0, dut.debouncer_inst.current_state);
+        $dumpvars(0, dut.debouncer_inst.debounce_cnt);
+    end
+    
+    // ========================================================================
+    // TEST STIMULUS - SHOW STATE CHANGES
     // ========================================================================
     initial begin
         $display("==========================================");
-        $display("TOP MODULE TEST - SIMPLE INPUT CHANGES");
+        $display("TOP MODULE TEST - SHOWING MODULE STATE CHANGES");
         $display("==========================================");
         
         // Initialize
@@ -45,198 +58,198 @@ module tb_top_debug;
         keypad_cols = 4'b1111; // No keys pressed
         
         // Reset sequence
-        #100;
+        repeat(5) @(posedge dut.clk);
         reset = 1;
-        #100;
+        repeat(5) @(posedge dut.clk);
         
-        $display("Starting input changes...");
+        $display("Reset complete - system should start running");
         
-        // Test 1: No keys - let system run
-        $display("Test 1: No keys pressed - watch system run");
+        // Test 1: No keys - let system run and show state changes
+        $display("Test 1: No keys - watch scanner cycle through states");
         keypad_cols = 4'b1111;
-        #5000; // Let it run for a while
+        repeat(100) @(posedge dut.clk); // Let it cycle many times
         
-        // Test 2: Press key 1 (Row0, Col0)
-        $display("Test 2: Press key 1 (Row0, Col0)");
+        // Test 2: Press key 1 (Row0, Col0) - should see debouncer state changes
+        $display("Test 2: Press key 1 (Row0, Col0) - watch debouncer go IDLE->DEBOUNCING->KEY_HELD");
         keypad_cols = 4'b1110;
-        #10000; // Hold for a while
+        repeat(200) @(posedge dut.clk); // Hold for many cycles to see debounce
         
         // Test 3: Release key
-        $display("Test 3: Release key");
+        $display("Test 3: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 4: Press key 2 (Row0, Col1)
-        $display("Test 4: Press key 2 (Row0, Col1)");
+        // Test 4: Press key 2 (Row0, Col1) - should see debouncer state changes
+        $display("Test 4: Press key 2 (Row0, Col1) - watch debouncer state changes");
         keypad_cols = 4'b1101;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 5: Release key
-        $display("Test 5: Release key");
+        $display("Test 5: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 6: Press key 3 (Row0, Col2)
-        $display("Test 6: Press key 3 (Row0, Col2)");
+        // Test 6: Press key 3 (Row0, Col2) - should see debouncer state changes
+        $display("Test 6: Press key 3 (Row0, Col2) - watch debouncer state changes");
         keypad_cols = 4'b1011;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 7: Release key
-        $display("Test 7: Release key");
+        $display("Test 7: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 8: Press key C (Row0, Col3)
-        $display("Test 8: Press key C (Row0, Col3)");
+        // Test 8: Press key C (Row0, Col3) - should see debouncer state changes
+        $display("Test 8: Press key C (Row0, Col3) - watch debouncer state changes");
         keypad_cols = 4'b0111;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 9: Release key
-        $display("Test 9: Release key");
+        $display("Test 9: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 10: Press key 4 (Row1, Col0)
-        $display("Test 10: Press key 4 (Row1, Col0)");
+        // Test 10: Press key 4 (Row1, Col0) - should see debouncer state changes
+        $display("Test 10: Press key 4 (Row1, Col0) - watch debouncer state changes");
         keypad_cols = 4'b1110;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 11: Release key
-        $display("Test 11: Release key");
+        $display("Test 11: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 12: Press key 5 (Row1, Col1)
-        $display("Test 12: Press key 5 (Row1, Col1)");
+        // Test 12: Press key 5 (Row1, Col1) - should see debouncer state changes
+        $display("Test 12: Press key 5 (Row1, Col1) - watch debouncer state changes");
         keypad_cols = 4'b1101;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 13: Release key
-        $display("Test 13: Release key");
+        $display("Test 13: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 14: Press key 6 (Row1, Col2)
-        $display("Test 14: Press key 6 (Row1, Col2)");
+        // Test 14: Press key 6 (Row1, Col2) - should see debouncer state changes
+        $display("Test 14: Press key 6 (Row1, Col2) - watch debouncer state changes");
         keypad_cols = 4'b1011;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 15: Release key
-        $display("Test 15: Release key");
+        $display("Test 15: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 16: Press key D (Row1, Col3)
-        $display("Test 16: Press key D (Row1, Col3)");
+        // Test 16: Press key D (Row1, Col3) - should see debouncer state changes
+        $display("Test 16: Press key D (Row1, Col3) - watch debouncer state changes");
         keypad_cols = 4'b0111;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 17: Release key
-        $display("Test 17: Release key");
+        $display("Test 17: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 18: Press key 7 (Row2, Col0)
-        $display("Test 18: Press key 7 (Row2, Col0)");
+        // Test 18: Press key 7 (Row2, Col0) - should see debouncer state changes
+        $display("Test 18: Press key 7 (Row2, Col0) - watch debouncer state changes");
         keypad_cols = 4'b1110;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 19: Release key
-        $display("Test 19: Release key");
+        $display("Test 19: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 20: Press key 8 (Row2, Col1)
-        $display("Test 20: Press key 8 (Row2, Col1)");
+        // Test 20: Press key 8 (Row2, Col1) - should see debouncer state changes
+        $display("Test 20: Press key 8 (Row2, Col1) - watch debouncer state changes");
         keypad_cols = 4'b1101;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 21: Release key
-        $display("Test 21: Release key");
+        $display("Test 21: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 22: Press key 9 (Row2, Col2)
-        $display("Test 22: Press key 9 (Row2, Col2)");
+        // Test 22: Press key 9 (Row2, Col2) - should see debouncer state changes
+        $display("Test 22: Press key 9 (Row2, Col2) - watch debouncer state changes");
         keypad_cols = 4'b1011;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 23: Release key
-        $display("Test 23: Release key");
+        $display("Test 23: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 24: Press key E (Row2, Col3)
-        $display("Test 24: Press key E (Row2, Col3)");
+        // Test 24: Press key E (Row2, Col3) - should see debouncer state changes
+        $display("Test 24: Press key E (Row2, Col3) - watch debouncer state changes");
         keypad_cols = 4'b0111;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 25: Release key
-        $display("Test 25: Release key");
+        $display("Test 25: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 26: Press key A (Row3, Col0)
-        $display("Test 26: Press key A (Row3, Col0)");
+        // Test 26: Press key A (Row3, Col0) - should see debouncer state changes
+        $display("Test 26: Press key A (Row3, Col0) - watch debouncer state changes");
         keypad_cols = 4'b1110;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 27: Release key
-        $display("Test 27: Release key");
+        $display("Test 27: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 28: Press key 0 (Row3, Col1)
-        $display("Test 28: Press key 0 (Row3, Col1)");
+        // Test 28: Press key 0 (Row3, Col1) - should see debouncer state changes
+        $display("Test 28: Press key 0 (Row3, Col1) - watch debouncer state changes");
         keypad_cols = 4'b1101;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 29: Release key
-        $display("Test 29: Release key");
+        $display("Test 29: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 30: Press key B (Row3, Col2)
-        $display("Test 30: Press key B (Row3, Col2)");
+        // Test 30: Press key B (Row3, Col2) - should see debouncer state changes
+        $display("Test 30: Press key B (Row3, Col2) - watch debouncer state changes");
         keypad_cols = 4'b1011;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 31: Release key
-        $display("Test 31: Release key");
+        $display("Test 31: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 32: Press key F (Row3, Col3)
-        $display("Test 32: Press key F (Row3, Col3)");
+        // Test 32: Press key F (Row3, Col3) - should see debouncer state changes
+        $display("Test 32: Press key F (Row3, Col3) - watch debouncer state changes");
         keypad_cols = 4'b0111;
-        #10000;
+        repeat(200) @(posedge dut.clk);
         
         // Test 33: Release key
-        $display("Test 33: Release key");
+        $display("Test 33: Release key - watch debouncer go back to IDLE");
         keypad_cols = 4'b1111;
-        #5000;
+        repeat(100) @(posedge dut.clk);
         
-        // Test 34: Rapid key changes
-        $display("Test 34: Rapid key changes");
-        keypad_cols = 4'b1110; #1000; // Key 1
-        keypad_cols = 4'b1101; #1000; // Key 2
-        keypad_cols = 4'b1011; #1000; // Key 3
-        keypad_cols = 4'b0111; #1000; // Key C
-        keypad_cols = 4'b1110; #1000; // Key 4
-        keypad_cols = 4'b1101; #1000; // Key 5
-        keypad_cols = 4'b1011; #1000; // Key 6
-        keypad_cols = 4'b0111; #1000; // Key D
-        keypad_cols = 4'b1110; #1000; // Key 7
-        keypad_cols = 4'b1101; #1000; // Key 8
-        keypad_cols = 4'b1011; #1000; // Key 9
-        keypad_cols = 4'b0111; #1000; // Key E
-        keypad_cols = 4'b1110; #1000; // Key A
-        keypad_cols = 4'b1101; #1000; // Key 0
-        keypad_cols = 4'b1011; #1000; // Key B
-        keypad_cols = 4'b0111; #1000; // Key F
-        keypad_cols = 4'b1111; #5000; // Release all
+        // Test 34: Rapid key changes - watch state changes
+        $display("Test 34: Rapid key changes - watch state changes");
+        keypad_cols = 4'b1110; repeat(20) @(posedge dut.clk); // Key 1
+        keypad_cols = 4'b1101; repeat(20) @(posedge dut.clk); // Key 2
+        keypad_cols = 4'b1011; repeat(20) @(posedge dut.clk); // Key 3
+        keypad_cols = 4'b0111; repeat(20) @(posedge dut.clk); // Key C
+        keypad_cols = 4'b1110; repeat(20) @(posedge dut.clk); // Key 4
+        keypad_cols = 4'b1101; repeat(20) @(posedge dut.clk); // Key 5
+        keypad_cols = 4'b1011; repeat(20) @(posedge dut.clk); // Key 6
+        keypad_cols = 4'b0111; repeat(20) @(posedge dut.clk); // Key D
+        keypad_cols = 4'b1110; repeat(20) @(posedge dut.clk); // Key 7
+        keypad_cols = 4'b1101; repeat(20) @(posedge dut.clk); // Key 8
+        keypad_cols = 4'b1011; repeat(20) @(posedge dut.clk); // Key 9
+        keypad_cols = 4'b0111; repeat(20) @(posedge dut.clk); // Key E
+        keypad_cols = 4'b1110; repeat(20) @(posedge dut.clk); // Key A
+        keypad_cols = 4'b1101; repeat(20) @(posedge dut.clk); // Key 0
+        keypad_cols = 4'b1011; repeat(20) @(posedge dut.clk); // Key B
+        keypad_cols = 4'b0111; repeat(20) @(posedge dut.clk); // Key F
+        keypad_cols = 4'b1111; repeat(100) @(posedge dut.clk); // Release all
         
-        $display("Test complete!");
+        $display("Test complete! Check the VCD file for waveforms.");
         $finish;
     end
 
