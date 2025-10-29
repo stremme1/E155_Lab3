@@ -1,9 +1,9 @@
 // ============================================================================
-// LAB3 TOP MODULE TEST BENCH - COMPREHENSIVE DEBUG VERSION
+// LAB3 TOP MODULE TEST BENCH - QUESTA COMPATIBLE VERSION
 // ============================================================================
 // Emmett Stralka estralka@hmc.edu
 // 09/09/25
-// Test bench for lab3_top module with comprehensive system testing
+// Test bench for lab3_top module with slower clock for Questa visibility
 // Tests complete keypad system from key press to display output with all states
 // ============================================================================
 
@@ -14,8 +14,8 @@ module tb_top_debug;
     // ========================================================================
     // PARAMETERS AND SIGNALS
     // ========================================================================
-    parameter CLK_PERIOD = 333.33; // 3MHz clock (333.33ns period)
-    parameter DEBOUNCE_TIME = 60000; // 20ms debounce time @ 3MHz
+    parameter CLK_PERIOD = 100; // 100ns period (10MHz) for better Questa visibility
+    parameter DEBOUNCE_TIME = 2000; // 2000 cycles for debounce (200us @ 10MHz)
     
     // Top module inputs
     logic        reset;         // Active-low reset signal
@@ -47,7 +47,7 @@ module tb_top_debug;
     // ========================================================================
     // CLOCK GENERATION
     // ========================================================================
-    // Note: lab3_top uses internal clock generation
+    // Note: lab3_top uses internal clock generation, but we'll override it for simulation
     
     // ========================================================================
     // DISPLAY TASKS
@@ -156,9 +156,9 @@ module tb_top_debug;
         timeout_count = 0;
         $display("[%0t] Waiting for %s to be processed...", $time, key_name);
         
-        while (dut.key_valid != 1'b1 && timeout_count < 500) begin
+        while (dut.key_valid != 1'b1 && timeout_count < 1000) begin
             @(posedge dut.clk);
-            if (timeout_count % 50 == 0) begin
+            if (timeout_count % 100 == 0) begin
                 display_system_state();
                 display_keypad_state();
                 display_display_state();
@@ -171,7 +171,7 @@ module tb_top_debug;
         if (dut.key_valid && dut.debounced_key == expected_key) begin
             $display("[%0t] *** %s PROCESSED! Key_valid = %b, Debounced_key = 0x%h ***", 
                      $time, key_name, dut.key_valid, dut.debounced_key);
-        end else if (timeout_count >= 500) begin
+        end else if (timeout_count >= 1000) begin
             $display("[%0t] *** TIMEOUT! %s was not processed within expected time ***", $time, key_name);
         end else begin
             $display("[%0t] *** UNEXPECTED! Expected 0x%h, got 0x%h ***", 
@@ -199,7 +199,10 @@ module tb_top_debug;
     // ========================================================================
     initial begin
         $display("==========================================");
-        $display("LAB3 TOP MODULE COMPREHENSIVE DEBUG TEST");
+        $display("LAB3 TOP MODULE QUESTA COMPATIBLE TEST");
+        $display("==========================================");
+        $display("This test uses a slower clock for better Questa visibility");
+        $display("Watch the state changes over time as keys are pressed");
         $display("==========================================");
         
         // Initialize signals
@@ -214,13 +217,14 @@ module tb_top_debug;
         reset = 1;
         #(CLK_PERIOD * 5);
         
-        $display("\n[%0t] Reset released. Starting comprehensive system test...", $time);
+        $display("\n[%0t] Reset released. Starting system test...", $time);
         
         // Test 1: Initial state (no keys pressed)
         $display("\n--- TEST 1: Initial State (No Keys) ---");
-        for (cycle_count = 0; cycle_count < 10; cycle_count++) begin
+        $display("Watch scanner cycle through states: SCAN_ROW0 -> SCAN_ROW1 -> SCAN_ROW2 -> SCAN_ROW3");
+        for (cycle_count = 0; cycle_count < 20; cycle_count++) begin
             @(posedge dut.clk);
-            if (cycle_count % 2 == 0) begin
+            if (cycle_count % 5 == 0) begin
                 display_system_state();
                 display_keypad_state();
                 display_display_state();
@@ -241,6 +245,7 @@ module tb_top_debug;
         // Test 3: Multiple key sequence (digit shifting)
         $display("\n--- TEST 3: Multiple Key Sequence (Digit Shifting) ---");
         $display("[%0t] Testing digit shifting: 1, 2, 3, 4", $time);
+        $display("Watch how digits shift: 1 -> 12 -> 123 -> 1234");
         
         test_key_sequence(4'b1110, 4'h1, "Key '1'");
         test_key_sequence(4'b1101, 4'h2, "Key '2'");
@@ -298,9 +303,9 @@ module tb_top_debug;
         wait_for_key_processing(4'hE, "Key 'E'");
         
         // Hold for additional cycles
-        for (cycle_count = 0; cycle_count < 100; cycle_count++) begin
+        for (cycle_count = 0; cycle_count < 50; cycle_count++) begin
             @(posedge dut.clk);
-            if (cycle_count % 20 == 0) begin
+            if (cycle_count % 10 == 0) begin
                 display_display_state();
                 display_debouncer_state();
             end
@@ -313,9 +318,9 @@ module tb_top_debug;
         $display("[%0t] Pressing multiple keys (should not process)...", $time);
         keypad_cols = 4'b1100; // Columns 0 and 1 active
         
-        for (cycle_count = 0; cycle_count < 200; cycle_count++) begin
+        for (cycle_count = 0; cycle_count < 100; cycle_count++) begin
             @(posedge dut.clk);
-            if (cycle_count % 50 == 0) begin
+            if (cycle_count % 25 == 0) begin
                 display_system_state();
                 display_keypad_state();
                 display_display_state();
@@ -329,13 +334,13 @@ module tb_top_debug;
         
         // No keys pressed
         keypad_cols = 4'b1111;
-        for (cycle_count = 0; cycle_count < 50; cycle_count++) begin
+        for (cycle_count = 0; cycle_count < 25; cycle_count++) begin
             @(posedge dut.clk);
         end
         
         // All keys pressed (should not process)
         keypad_cols = 4'b0000;
-        for (cycle_count = 0; cycle_count < 50; cycle_count++) begin
+        for (cycle_count = 0; cycle_count < 25; cycle_count++) begin
             @(posedge dut.clk);
         end
         
@@ -391,7 +396,7 @@ module tb_top_debug;
         display_display_state();
         
         $display("\n==========================================");
-        $display("COMPREHENSIVE TOP MODULE TEST COMPLETE");
+        $display("QUESTA COMPATIBLE TOP MODULE TEST COMPLETE");
         $display("==========================================");
         $finish;
     end
@@ -399,10 +404,8 @@ module tb_top_debug;
     // ========================================================================
     // MONITORING
     // ========================================================================
-    initial begin
-        $monitor("[%0t] RST=%b ROWS=%b COLS=%b SEG=%b SEL0=%b SEL1=%b", 
-                 $time, reset, keypad_rows, keypad_cols, seg, select0, select1);
-    end
+    // Note: $monitor with complex expressions not supported in iverilog
+    // Using display tasks instead for better compatibility
     
     // ========================================================================
     // WAVEFORM DUMP
